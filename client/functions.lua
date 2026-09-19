@@ -170,7 +170,10 @@ end
 
 -- Server Callback (asks the server); the answer goes to cb
 function WCore.Functions.TriggerCallback(name, cb, ...)
-    w.callback(name, false, cb or function() end, ...)
+    if w and w.callback and w.callback.triggerServer then
+        return w.callback.triggerServer(name, cb or function() end, ...)
+    end
+    TriggerServerEvent('WCore:Server:TriggerCallback', name, ...)
 end
 
 function WCore.Functions.Progressbar(_, label, duration, useWhileDead, canCancel, disableControls, animation, prop, propTwo, onFinish, onCancel)

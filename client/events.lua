@@ -22,7 +22,10 @@ RegisterNetEvent('w_creators:client:spawn', function()
         local deadline = GetGameTimer() + 15000
         while IsScreenFadedOut() and GetGameTimer() < deadline do Wait(100) end
         Wait(500)
-        TriggerEvent('WCore:Client:OnPlayerLoaded')
+        local ok, err = pcall(TriggerEvent, 'WCore:Client:OnPlayerLoaded')
+        if not ok then
+            print(('^1[w_core] Error in OnPlayerLoaded handler: %s^7'):format(tostring(err)))
+        end
     end)
 end)
 

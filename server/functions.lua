@@ -207,7 +207,10 @@ end
 
 -- Client Callback (asks a player); the answer goes to cb
 function WCore.Functions.TriggerClientCallback(name, source, cb, ...)
-    w.callback(name, source, cb or function() end, ...)
+    if w and w.callback and w.callback.triggerClient then
+        return w.callback.triggerClient(name, source, cb or function() end, ...)
+    end
+    TriggerClientEvent('WCore:Client:TriggerCallback', source, name, ...)
 end
 
 -- Server Callback (answers the clients)
