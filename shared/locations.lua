@@ -1,0 +1,4 @@
+WShared.Locations = {
+    -- add here
+
+}

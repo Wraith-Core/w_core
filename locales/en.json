@@ -1,0 +1,333 @@
+{
+    "error": {
+        "required_identifiers": "Connection refused. Required identifiers are missing: %{identifiers}. Sign into Discord and Steam before starting RedM, link Discord when prompted, and use a valid Rockstar account. Restart RedM and reconnect.",
+        "identity_discord": "Discord",
+        "identity_steam": "Steam",
+        "identity_license": "Rockstar license",
+        "not_online": "Player not online",
+        "wrong_format": "Incorrect format",
+        "missing_args": "Not every argument has been entered (x, y, z)",
+        "missing_args2": "All arguments must be filled out!",
+        "no_access": "No access to this command",
+        "company_too_poor": "Your employer is broke",
+        "location_not_exist": "Location does not exist",
+        "duplicate_license": "Duplicate Rockstar License Found",
+        "no_valid_license": "No Valid Rockstar License Found",
+        "not_whitelisted": "You're not whitelisted for this server",
+        "server_already_open": "The server is already open",
+        "server_already_closed": "The server is already closed",
+        "no_permission": "You don't have permission for that.",
+        "no_waypoint": "No Waypoint Set.",
+        "tp_error": "Error While Teleporting.",
+        "no_skill": "That skill does not exist",
+        "banned": "You have been banned from the server:\n%{reason}\nYour ban expires %{date}\n"
+    },
+    "success": {
+        "server_opened": "The server has been opened",
+        "server_closed": "The server has been closed",
+        "teleported_waypoint": "Teleported To Waypoint."
+    },
+    "info": {
+        "received_paycheck": "You received your paycheck of $%{value}",
+        "job_info": "Job: %{value} | Grade: %{value2} | Duty: %{value3}",
+        "gang_info": "Gang: %{value} | Grade: %{value2}",
+        "on_duty": "You are now on duty!",
+        "off_duty": "You are now off duty!",
+        "checking_ban": "Hello %s. We are checking if you are banned.",
+        "join_server": "Welcome %s to Wraith Core.",
+        "checking_whitelisted": "Hello %s. We are checking your allowance.",
+        "exploit_banned": "You have been banned for cheating. Check our Discord for more information: %{discord}",
+        "exploit_dropped": "You Have Been Kicked For Exploitation",
+        "xp_added": "XP added",
+        "xp_removed": "XP removed",
+        "xp_info": "You have %{value} XP in %{value2}",
+        "level_info": "You are level %{value} in %{value2}",
+        "your_id": "ID: %{value}",
+        "your_cid": "Citizen ID: %{value}",
+        "no_reason": "No reason specified",
+        "server_closed_default": "Server Closed",
+        "kick_discord": "Check our Discord for further information: %{discord}",
+        "try_success": "He succeeded in trying: %{text}",
+        "try_fail": "He failed trying: %{text}",
+        "citizen": "Citizen [%{id}]",
+        "ooc_prefix": "OOC | %{name}",
+        "ooc_proximity": "Proximity OOC | %{name}",
+        "system": "System",
+        "duty_on": "On",
+        "duty_off": "Off",
+        "character_deleted": "An admin deleted the character you are currently playing"
+    },
+    "command": {
+        "tp": {
+            "help": "TP To Player or Coords (Admin Only)",
+            "params": {
+                "x": {
+                    "name": "id/x",
+                    "help": "ID of player or X position"
+                },
+                "y": {
+                    "name": "y",
+                    "help": "Y position"
+                },
+                "z": {
+                    "name": "z",
+                    "help": "Z position"
+                }
+            }
+        },
+        "tpm": {
+            "help": "TP To Marker (Admin Only)"
+        },
+        "addpermission": {
+            "help": "Give Player Permissions (God Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "ID of player"
+                },
+                "permission": {
+                    "name": "permission",
+                    "help": "Permission level"
+                }
+            }
+        },
+        "removepermission": {
+            "help": "Remove Player Permissions (God Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "ID of player"
+                },
+                "permission": {
+                    "name": "permission",
+                    "help": "Permission level"
+                }
+            }
+        },
+        "openserver": {
+            "help": "Open the server for everyone (Admin Only)"
+        },
+        "closeserver": {
+            "help": "Close the server for people without permissions (Admin Only)",
+            "params": {
+                "reason": {
+                    "name": "reason",
+                    "help": "Reason for closing (optional)"
+                }
+            }
+        },
+        "dv": {
+            "help": "Delete Wagon (Admin Only)"
+        },
+        "dh": {
+            "help": "Delete Horse (Admin Only)"
+        },
+        "spawnwagon": {
+            "help": "Spawn a Wagon (Admin Only)",
+            "params": {
+                "model": {
+                    "name": "model",
+                    "help": "Model name of the wagon"
+                }
+            }
+        },
+        "spawnhorse": {
+            "help": "Spawn a Horse (Admin Only)",
+            "params": {
+                "model": {
+                    "name": "model",
+                    "help": "Model name of the horse"
+                }
+            }
+        },
+        "givemoney": {
+            "help": "Give A Player Money (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "moneytype": {
+                    "name": "moneytype",
+                    "help": "Type of money (cash, bank, bloodmoney)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of money"
+                }
+            }
+        },
+        "setmoney": {
+            "help": "Set Players Money Amount (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "moneytype": {
+                    "name": "moneytype",
+                    "help": "Type of money (cash, bank, bloodmoney)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of money"
+                }
+            }
+        },
+        "job": {
+            "help": "Check Your Job"
+        },
+        "setjob": {
+            "help": "Set A Players Job (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "job": {
+                    "name": "job",
+                    "help": "Job name"
+                },
+                "grade": {
+                    "name": "grade",
+                    "help": "Job grade"
+                }
+            }
+        },
+        "gang": {
+            "help": "Check Your Gang"
+        },
+        "setgang": {
+            "help": "Set A Players Gang (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "gang": {
+                    "name": "gang",
+                    "help": "Gang name"
+                },
+                "grade": {
+                    "name": "grade",
+                    "help": "Gang grade"
+                }
+            }
+        },
+        "givexp": {
+            "help": "Give A Player XP (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of XP"
+                }
+            }
+        },
+        "removexp": {
+            "help": "Remove XP From A Player (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of XP"
+                }
+            }
+        },
+        "xp": {
+            "help": "Check How Much XP You Have",
+            "params": {
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                }
+            }
+        },
+        "givelevel": {
+            "help": "Give A Player Levels (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of levels"
+                }
+            }
+        },
+        "removelevel": {
+            "help": "Remove Levels From A Player (Admin Only)",
+            "params": {
+                "id": {
+                    "name": "id",
+                    "help": "Player ID"
+                },
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                },
+                "amount": {
+                    "name": "amount",
+                    "help": "Amount of levels"
+                }
+            }
+        },
+        "level": {
+            "help": "Check Which Level You Are",
+            "params": {
+                "skill": {
+                    "name": "skill",
+                    "help": "Type of skill (mining, etc)"
+                }
+            }
+        },
+        "ooc": {
+            "help": "OOC Chat Message"
+        },
+        "me": {
+            "help": "Show local message",
+            "params": {
+                "message": {
+                    "name": "message",
+                    "help": "Message to send"
+                }
+            }
+        },
+        "do": {
+            "help": "Describe what is happening around you"
+        },
+        "try": {
+            "help": "Try something, with a random outcome"
+        },
+        "id": {
+            "help": "Check Your ID #"
+        },
+        "cid": {
+            "help": "Check Your Citizen ID #"
+        }
+    },
+    "loading": {
+        "text1": "Welcome to Wraith Core RedM",
+        "text2": "Enjoy your time!",
+        "text3": "Don't squat with your spurs on!"
+    }
+}
