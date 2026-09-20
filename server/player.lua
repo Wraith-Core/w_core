@@ -85,18 +85,14 @@ function WCore.Player.CheckPlayerData(source, PlayerData)
 		Offline = false
 	end
 
-	PlayerData.citizenid = PlayerData.citizenid or WCore.Player.CreateCitizenId()
-	PlayerData.cid = PlayerData.cid or 1
-	PlayerData.money = PlayerData.money or {}
-	PlayerData.optin = PlayerData.optin or true
-	for moneytype, startamount in pairs(WCore.Config.Money.MoneyTypes) do
-		PlayerData.money[moneytype] = PlayerData.money[moneytype] or startamount
-	end
-	if PlayerData.money.bloodmoney and not PlayerData.money.gold then
-		PlayerData.money.gold = PlayerData.money.bloodmoney
-	elseif PlayerData.money.gold and not PlayerData.money.bloodmoney then
-		PlayerData.money.bloodmoney = PlayerData.money.gold
-	end
+    local isNew = not PlayerData.citizenid
+    PlayerData.citizenid = PlayerData.citizenid or WCore.Player.CreateCitizenId()
+    PlayerData.cid = PlayerData.cid or 1
+    PlayerData.optin = PlayerData.optin or true
+    if not WCore.Economy.hydrate(PlayerData,isNew) then
+        if source then DropPlayer(source,'البنك المركزي غير جاهز. يرجى الانتظار حتى تفعيل الاقتصاد بواسطة الإدارة.') end
+        return nil
+    end
 
 	-- Charinfo
 	PlayerData.charinfo = PlayerData.charinfo or {}
@@ -296,6 +292,7 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 		if not key or type(key) ~= "string" then
 			return
 		end
+		if key == 'money' or key == 'citizenid' then return false end
 		self.PlayerData[key] = val
 		self.Functions.UpdatePlayerData()
 	end
@@ -390,227 +387,20 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 
 
 
-	function self.Functions.AddMoney(moneytype, amount, reason)
-		reason = reason or "unknown"
-		moneytype = moneytype:lower()
-		amount = tonumber(amount)
-		if amount < 0 then return false end
-		if moneytype == 'gold' and not self.PlayerData.money['gold'] and self.PlayerData.money['bloodmoney'] then
-			moneytype = 'bloodmoney'
-		elseif moneytype == 'bloodmoney' and not self.PlayerData.money['bloodmoney'] and self.PlayerData.money['gold'] then
-			moneytype = 'gold'
-		end
-		if not self.PlayerData.money[moneytype] then return false end
-
-		self.PlayerData.money[moneytype] = self.PlayerData.money[moneytype] + amount
-		if moneytype == 'gold' and self.PlayerData.money['bloodmoney'] ~= nil then
-			self.PlayerData.money['bloodmoney'] = self.PlayerData.money['gold']
-		elseif moneytype == 'bloodmoney' and self.PlayerData.money['gold'] ~= nil then
-			self.PlayerData.money['gold'] = self.PlayerData.money['bloodmoney']
-		end
-
-		if not self.Offline then
-			self.Functions.UpdatePlayerData()
-			if amount > 100000 then
-				TriggerEvent(
-					"w_log:server:CreateLog",
-					"playermoney",
-					"AddMoney",
-					"lightgreen",
-					"**"
-						.. GetPlayerName(self.PlayerData.source)
-						.. " (citizenid: "
-						.. self.PlayerData.citizenid
-						.. " | id: "
-						.. self.PlayerData.source
-						.. ")** $"
-						.. amount
-						.. " ("
-						.. moneytype
-						.. ") added, new "
-						.. moneytype
-						.. " balance: "
-						.. self.PlayerData.money[moneytype]
-						.. " reason: "
-						.. reason,
-					true
-				)
-			else
-				TriggerEvent(
-					"w_log:server:CreateLog",
-					"playermoney",
-					"AddMoney",
-					"lightgreen",
-					"**"
-						.. GetPlayerName(self.PlayerData.source)
-						.. " (citizenid: "
-						.. self.PlayerData.citizenid
-						.. " | id: "
-						.. self.PlayerData.source
-						.. ")** $"
-						.. amount
-						.. " ("
-						.. moneytype
-						.. ") added, new "
-						.. moneytype
-						.. " balance: "
-						.. self.PlayerData.money[moneytype]
-						.. " reason: "
-						.. reason
-				)
-			end
-			TriggerClientEvent("hud:client:OnMoneyChange", self.PlayerData.source, moneytype, amount, false)
-			TriggerEvent("WCore:Server:OnMoneyChange", self.PlayerData.source, moneytype, amount, "add", reason)
-		end
-
-		return true
-	end
-
-	function self.Functions.RemoveMoney(moneytype, amount, reason)
-		reason = reason or "unknown"
-		moneytype = moneytype:lower()
-		amount = tonumber(amount)
-		if amount < 0 then return false end
-		if moneytype == 'gold' and not self.PlayerData.money['gold'] and self.PlayerData.money['bloodmoney'] then
-			moneytype = 'bloodmoney'
-		elseif moneytype == 'bloodmoney' and not self.PlayerData.money['bloodmoney'] and self.PlayerData.money['gold'] then
-			moneytype = 'gold'
-		end
-		if not self.PlayerData.money[moneytype] then return false end
-
-		for _, mtype in pairs(WCore.Config.Money.DontAllowMinus) do
-			if mtype == moneytype or (mtype == 'gold' and moneytype == 'bloodmoney') or (mtype == 'bloodmoney' and moneytype == 'gold') then
-				if (self.PlayerData.money[moneytype] - amount) < 0 then
-					return false
-				end
-			end
-		end
-		self.PlayerData.money[moneytype] = self.PlayerData.money[moneytype] - amount
-		if moneytype == 'gold' and self.PlayerData.money['bloodmoney'] ~= nil then
-			self.PlayerData.money['bloodmoney'] = self.PlayerData.money['gold']
-		elseif moneytype == 'bloodmoney' and self.PlayerData.money['gold'] ~= nil then
-			self.PlayerData.money['gold'] = self.PlayerData.money['bloodmoney']
-		end
-
-		if not self.Offline then
-			self.Functions.UpdatePlayerData()
-			if amount > 100000 then
-				TriggerEvent(
-					"w_log:server:CreateLog",
-					"playermoney",
-					"RemoveMoney",
-					"red",
-					"**"
-						.. GetPlayerName(self.PlayerData.source)
-						.. " (citizenid: "
-						.. self.PlayerData.citizenid
-						.. " | id: "
-						.. self.PlayerData.source
-						.. ")** $"
-						.. amount
-						.. " ("
-						.. moneytype
-						.. ") removed, new "
-						.. moneytype
-						.. " balance: "
-						.. self.PlayerData.money[moneytype]
-						.. " reason: "
-						.. reason,
-					true
-				)
-			else
-				TriggerEvent(
-					"w_log:server:CreateLog",
-					"playermoney",
-					"RemoveMoney",
-					"red",
-					"**"
-						.. GetPlayerName(self.PlayerData.source)
-						.. " (citizenid: "
-						.. self.PlayerData.citizenid
-						.. " | id: "
-						.. self.PlayerData.source
-						.. ")** $"
-						.. amount
-						.. " ("
-						.. moneytype
-						.. ") removed, new "
-						.. moneytype
-						.. " balance: "
-						.. self.PlayerData.money[moneytype]
-						.. " reason: "
-						.. reason
-				)
-			end
-			TriggerClientEvent("hud:client:OnMoneyChange", self.PlayerData.source, moneytype, amount, true)
-			TriggerEvent("WCore:Server:OnMoneyChange", self.PlayerData.source, moneytype, amount, "remove", reason)
-		end
-
-		return true
-	end
-
-	function self.Functions.SetMoney(moneytype, amount, reason)
-		reason = reason or "unknown"
-		moneytype = moneytype:lower()
-		amount = tonumber(amount)
-		if amount < 0 then return false end
-		if moneytype == 'gold' and not self.PlayerData.money['gold'] and self.PlayerData.money['bloodmoney'] then
-			moneytype = 'bloodmoney'
-		elseif moneytype == 'bloodmoney' and not self.PlayerData.money['bloodmoney'] and self.PlayerData.money['gold'] then
-			moneytype = 'gold'
-		end
-		if not self.PlayerData.money[moneytype] then return false end
-		local difference = amount - self.PlayerData.money[moneytype]
-		self.PlayerData.money[moneytype] = amount
-		if moneytype == 'gold' and self.PlayerData.money['bloodmoney'] ~= nil then
-			self.PlayerData.money['bloodmoney'] = self.PlayerData.money['gold']
-		elseif moneytype == 'bloodmoney' and self.PlayerData.money['gold'] ~= nil then
-			self.PlayerData.money['gold'] = self.PlayerData.money['bloodmoney']
-		end
-
-		if not self.Offline then
-			self.Functions.UpdatePlayerData()
-			TriggerEvent(
-				"w_log:server:CreateLog",
-				"playermoney",
-				"SetMoney",
-				"green",
-				"**"
-					.. GetPlayerName(self.PlayerData.source)
-					.. " (citizenid: "
-					.. self.PlayerData.citizenid
-					.. " | id: "
-					.. self.PlayerData.source
-					.. ")** $"
-					.. amount
-					.. " ("
-					.. moneytype
-					.. ") set, new "
-					.. moneytype
-					.. " balance: "
-					.. self.PlayerData.money[moneytype]
-					.. " reason: "
-					.. reason
-			)
-			TriggerClientEvent("hud:client:OnMoneyChange", self.PlayerData.source, moneytype, math.abs(difference), difference < 0)
-			TriggerEvent("WCore:Server:OnMoneyChange", self.PlayerData.source, moneytype, amount, "set", reason)
-		end
-
-		return true
-	end
-
-	function self.Functions.GetMoney(moneytype)
-		if not moneytype then
-			return false
-		end
-		moneytype = moneytype:lower()
-		if moneytype == 'gold' and self.PlayerData.money['gold'] == nil and self.PlayerData.money['bloodmoney'] ~= nil then
-			return self.PlayerData.money['bloodmoney']
-		elseif moneytype == 'bloodmoney' and self.PlayerData.money['bloodmoney'] == nil and self.PlayerData.money['gold'] ~= nil then
-			return self.PlayerData.money['gold']
-		end
-		return self.PlayerData.money[moneytype]
-	end
+	function self.Functions.AddMoney(kind, amount, reason)
+        return WCore.Economy.change(self,kind,amount,'add',reason)
+    end
+    function self.Functions.RemoveMoney(kind, amount, reason)
+        return WCore.Economy.change(self,kind,amount,'remove',reason)
+    end
+    function self.Functions.SetMoney(kind, amount, reason)
+        return WCore.Economy.change(self,kind,amount,'set',reason)
+    end
+    function self.Functions.GetMoney(kind)
+        if not WCore.Economy.ready() or type(kind)~='string' then return 0 end
+        if kind=='bloodmoney' then kind='gold' end
+        return exports.w_centralbank:GetBalance('player:'..self.PlayerData.citizenid..':'..kind) or 0
+    end
 
 	function self.Functions.Save()
 		if self.Offline then
@@ -736,7 +526,7 @@ function WCore.Player.Save(source)
 	local PlayerData = WCore.Players[source].PlayerData
 	if PlayerData then
 		MySQL.insert(
-			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, money = :money, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
+			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
 			{
 				citizenid = PlayerData.citizenid,
 				cid = tonumber(PlayerData.cid),
@@ -764,7 +554,7 @@ end
 function WCore.Player.SaveOffline(PlayerData)
 	if PlayerData then
 		MySQL.Async.insert(
-			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, money = :money, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
+			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
 			{
 				citizenid = PlayerData.citizenid,
 				cid = tonumber(PlayerData.cid),
@@ -804,6 +594,7 @@ function WCore.Player.DeleteCharacter(source, citizenid)
 	local license = WCore.Functions.GetIdentifier(source, "license")
 	local result = MySQL.scalar.await("SELECT license FROM players where citizenid = ?", { citizenid })
 	if license == result then
+        if not WCore.Economy.ready() or not exports.w_centralbank:CanDeleteCharacter(citizenid) then return false end
 		local query = "DELETE FROM %s WHERE %s = ?"
 		local tableCount = #playertables
 		local queries = table.create(tableCount, 0)

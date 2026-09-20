@@ -40,23 +40,15 @@ CreateThread(function()
                 local payment = WJobs[Player.PlayerData.job.name]['grades'][tonumber(Player.PlayerData.job.grade.level)].payment
                 if not payment then payment = Player.PlayerData.job.payment end
                 if Player.PlayerData.job and payment > 0 and (WJobs[Player.PlayerData.job.name].offDutyPay or Player.PlayerData.job.onduty) then
-                    if WCore.Config.Money.PayCheckSociety then
-                        local account = exports['w_management']:GetAccount(Player.PlayerData.job.name)
-                        if account ~= 0 then -- Checks if player is employed by a society
-                            if account < payment then -- Checks if company has enough money to pay society
-                                TriggerClientEvent('WCore:Notify', Player.PlayerData.source, 'error.company_too_poor', 'error')
-                            else
-                                Player.Functions.AddMoney('bank', payment)
-                                exports['w_management']:RemoveMoney(Player.PlayerData.job.name, payment)
-                                TriggerClientEvent('WCore:Notify', Player.PlayerData.source, { key = 'info.received_paycheck', subs = { value = payment } })
-                            end
-                        else
-                            Player.Functions.AddMoney('bank', payment)
-                            TriggerClientEvent('WCore:Notify', Player.PlayerData.source, { key = 'info.received_paycheck', subs = { value = payment } })
-                        end
+                    local paid=false
+                    if WCore.Economy.ready() then
+                        local from=WCore.Config.Money.PayCheckSociety and ('society:'..Player.PlayerData.job.name) or 'central:reserve'
+                        paid=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.job.name)
+                    end
+                    if paid then
+                        TriggerClientEvent('WCore:Notify',Player.PlayerData.source,{key='info.received_paycheck',subs={value=payment}})
                     else
-                        Player.Functions.AddMoney('bank', payment)
-                        TriggerClientEvent('WCore:Notify', Player.PlayerData.source, { key = 'info.received_paycheck', subs = { value = payment } })
+                        TriggerClientEvent('WCore:Notify',Player.PlayerData.source,'error.company_too_poor','error')
                     end
                 end
             end

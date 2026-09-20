@@ -7,8 +7,8 @@ WConfig.StatusInterval = 5 -- How often to check hunger/thirst status in seconds
 WConfig.ShowDoMeTryLength = 7 -- How long to show /me, /do, /try text (Set in Seconds)
 
 WConfig.Money = {}
-WConfig.Money.MoneyTypes = { cash = 500, bank = 5000, bloodmoney = 0, gold = 0 } -- type = startamount - Add or remove money types for your server (for ex. blackmoney = 0), remember once added it will not be removed from the database!
-WConfig.Money.DontAllowMinus = { 'cash', 'bloodmoney', 'gold' } -- Money that is not allowed going in minus
+WConfig.Money.MoneyTypes = { cash = 0, bank = 0, bloodmoney = 0, gold = 0 } -- type = startamount - Add or remove money types for your server (for ex. blackmoney = 0), remember once added it will not be removed from the database!
+WConfig.Money.DontAllowMinus = { 'cash', 'bank', 'bloodmoney', 'gold' } -- Money that is not allowed going in minus
 WConfig.Money.PayCheckTimeOut = 10 -- The time in minutes that it will give the paycheck
 WConfig.Money.PayCheckSociety = false -- If true paycheck will come from the society account that the player is employed at, requires w_management
 

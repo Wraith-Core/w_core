@@ -49,6 +49,7 @@ server_scripts {
     'server/main.lua',
     'server/functions.lua',
     'server/identifiers.lua',
+    'server/economy.lua',
     'server/player.lua',
     'server/events.lua',
     'server/commands.lua',
