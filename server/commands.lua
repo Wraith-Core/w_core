@@ -7,7 +7,13 @@ WCore.Commands.IgnoreList = { -- Ignore old perm levels while keeping backwards 
 
 -- Chat help texts come from the dictionary in the server language (w_lib:locale convar);
 -- notifications are sent as keys and translated on the client in the player's language.
+-- The server console (source 0) has no client to notify: the answer is printed there instead,
+-- otherwise a staff command typed in the txAdmin console would fail or succeed in silence.
 local function notify(source, key, subs, style)
+    if source == 0 then
+        print(('[w_core] %s'):format(Lang:t(key, subs)))
+        return
+    end
     if subs then
         TriggerClientEvent('WCore:Notify', source, { key = key, subs = subs }, style)
     else
@@ -22,6 +28,52 @@ local function params(command, names)
         list[#list + 1] = { name = Lang:t(base .. '.name'), help = Lang:t(base .. '.help') }
     end
     return list
+end
+
+-- ── the player a staff command names: his citizen id ───────────────────────
+-- Staff types the citizen id (the fixed id: 12, or an old one such as ABC12345 until the
+-- migration ran); '#5' names server id 5 on purpose. A plain number is never read as a server
+-- id: since citizen ids became digits the two collide, and "player not online" answered a valid
+-- citizen id. w.citizen asks WCore.Citizen directly inside w_core (it answers while w_core is
+-- still starting), so an online character comes back with his server id and an offline one
+-- with his saved row.
+local CITIZEN_ERRORS = {
+    invalid_id = 'error.invalid_citizen_id',
+    not_found = 'error.citizen_not_found',
+    offline = 'error.not_online',
+}
+
+--- The target the command names, or nil after telling the caller why.
+---@param needsOnline boolean|nil the action works on the live player only (a teleport, a session ACE)
+local function commandTarget(source, value, needsOnline)
+    local resolve = needsOnline and w.citizen.requireOnline or w.citizen.resolve
+    local target, reason = resolve(value, { self = source ~= 0 and source or nil })
+    if not target then
+        notify(source, CITIZEN_ERRORS[reason] or CITIZEN_ERRORS.not_found, nil, 'error')
+        return nil
+    end
+    return target
+end
+
+--- The Player object behind a target, and whether it is the offline one. Offline it is w_core's
+--- offline player (the saved row): the same Functions as in play, and Functions.Save() writes it.
+--- Money needs no save either way: the central ledger books it by citizen id (server/economy.lua).
+local function playerOf(target)
+    if target.online then
+        return WCore.Functions.GetPlayer(target.source), false
+    end
+    return WCore.Functions.GetOfflinePlayerByCitizenId(target.citizenid), true
+end
+
+--- How a change on a named player ended. In play the player sees the change himself, as before;
+--- an offline change is confirmed to staff (nothing else would show it), a refused one always.
+local function report(source, target, ok, offline)
+    local who = { name = w.citizen.label(target) }
+    if ok == false then
+        notify(source, 'error.not_applied', who, 'error')
+    elseif offline then
+        notify(source, 'success.offline_saved', who, 'success')
+    end
 end
 
 CreateThread(function() -- Add ace to node for perm checking
@@ -104,10 +156,15 @@ end
 -- Teleport
 WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z' }), false, function(source, args)
     if args[1] and not args[2] and not args[3] then
-        if tonumber(args[1]) then
-            local target = GetPlayerPed(tonumber(args[1]))
-            if target ~= 0 then
-                local coords = GetEntityCoords(target)
+        -- one argument: a citizen id (12, ABC12345) or '#5' is a player, any other word a location
+        -- name (three arguments are always x y z, so the digits never meet coordinates)
+        local kind = w.citizen.parse(args[1])
+        if kind == 'citizen' or kind == 'server' then
+            local target = commandTarget(source, args[1], true)
+            if not target then return end
+            local ped = GetPlayerPed(target.source)
+            if ped ~= 0 then
+                local coords = GetEntityCoords(ped)
                 TriggerClientEvent('WCore:Command:TeleportToPlayer', source, coords)
             else
                 notify(source, 'error.not_online', nil, 'error')
@@ -142,24 +199,19 @@ end, 'admin')
 
 -- Permissions
 
+-- a permission is a runtime ACE on the live connection (not saved): the player must be in play
 WCore.Commands.Add('addpermission', Lang:t('command.addpermission.help'), params('addpermission', { 'id', 'permission' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
+    local target = commandTarget(source, args[1], true)
+    if not target then return end
     local permission = tostring(args[2]):lower()
-    if Player then
-        WCore.Functions.AddPermission(Player.PlayerData.source, permission)
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    WCore.Functions.AddPermission(target.source, permission)
 end, 'god')
 
 WCore.Commands.Add('removepermission', Lang:t('command.removepermission.help'), params('removepermission', { 'id', 'permission' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
+    local target = commandTarget(source, args[1], true)
+    if not target then return end
     local permission = tostring(args[2]):lower()
-    if Player then
-        WCore.Functions.RemovePermission(Player.PlayerData.source, permission)
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    WCore.Functions.RemovePermission(target.source, permission)
 end, 'god')
 
 -- Open & Close Server
@@ -216,22 +268,23 @@ end, 'admin')
 
 -- Money
 
+-- Money works offline too: the balance lives in the central ledger under the citizen id, and the
+-- offline player's AddMoney / SetMoney book it there (no players-row save involved).
+local function changeMoney(source, args, method)
+    local target = commandTarget(source, args[1])
+    if not target then return end
+    local Player, offline = playerOf(target)
+    if not Player then return notify(source, 'error.citizen_not_found', nil, 'error') end
+    local ok = Player.Functions[method](tostring(args[2]), tonumber(args[3]))
+    report(source, target, ok, offline)
+end
+
 WCore.Commands.Add('givemoney', Lang:t('command.givemoney.help'), params('givemoney', { 'id', 'moneytype', 'amount' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
-    if Player then
-        Player.Functions.AddMoney(tostring(args[2]), tonumber(args[3]))
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    changeMoney(source, args, 'AddMoney')
 end, 'admin')
 
 WCore.Commands.Add('setmoney', Lang:t('command.setmoney.help'), params('setmoney', { 'id', 'moneytype', 'amount' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
-    if Player then
-        Player.Functions.SetMoney(tostring(args[2]), tonumber(args[3]))
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    changeMoney(source, args, 'SetMoney')
 end, 'admin')
 
 -- Job
@@ -245,13 +298,20 @@ WCore.Commands.Add('job', Lang:t('command.job.help'), {}, false, function(source
     notify(source, 'info.job_info', { value = WShared.JobLabel(PlayerJob, source), value2 = WShared.GradeName(PlayerJob, source), value3 = PlayerJob.onduty and 'info.duty_on' or 'info.duty_off' })
 end, 'user')
 
+-- Job and gang work offline too: the offline player's SetJob / SetGang (the same checks as in
+-- play), then its row is saved; the character finds the new role when he joins.
+local function changeRole(source, args, method)
+    local target = commandTarget(source, args[1])
+    if not target then return end
+    local Player, offline = playerOf(target)
+    if not Player then return notify(source, 'error.citizen_not_found', nil, 'error') end
+    local ok = Player.Functions[method](tostring(args[2]), tonumber(args[3]))
+    if ok ~= false and offline then Player.Functions.Save() end
+    report(source, target, ok, offline)
+end
+
 WCore.Commands.Add('setjob', Lang:t('command.setjob.help'), params('setjob', { 'id', 'job', 'grade' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
-    if Player then
-        Player.Functions.SetJob(tostring(args[2]), tonumber(args[3]))
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    changeRole(source, args, 'SetJob')
 end, 'admin')
 
 -- Gang
@@ -264,26 +324,31 @@ WCore.Commands.Add('gang', Lang:t('command.gang.help'), {}, false, function(sour
 end, 'user')
 
 WCore.Commands.Add('setgang', Lang:t('command.setgang.help'), params('setgang', { 'id', 'gang', 'grade' }), true, function(source, args)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
-    if Player then
-        Player.Functions.SetGang(tostring(args[2]), tonumber(args[3]))
-    else
-        notify(source, 'error.not_online', nil, 'error')
-    end
+    changeRole(source, args, 'SetGang')
 end, 'admin')
 
 -- XP / Levels
 
+-- XP and levels live in the metadata: offline, the offline player's metadata is changed the same
+-- way and its row saved.
 local function changeSkill(source, args, field, method, doneKey)
-    local Player = WCore.Functions.GetPlayer(tonumber(args[1]))
-    if not Player then
-        notify(source, 'error.not_online', nil, 'error')
-        return
-    end
-    local skill = tostring(args[2])
+    local target = commandTarget(source, args[1])
+    if not target then return end
+    local Player, offline = playerOf(target)
+    if not Player then return notify(source, 'error.citizen_not_found', nil, 'error') end
+    local skill = tostring(args[2]):lower()
+    -- AddXp & co. compare the amount with 0: a word there would raise instead of answering
+    local amount = tonumber(args[3])
+    if not amount then return notify(source, 'error.wrong_format', nil, 'error') end
     if Player.PlayerData.metadata[field] and Player.PlayerData.metadata[field][skill] then
-        Player.Functions[method](skill, tonumber(args[3]))
-        notify(source, doneKey, nil, 'success')
+        local ok = Player.Functions[method](skill, amount)
+        if ok == false then return report(source, target, false, offline) end
+        if offline then
+            Player.Functions.Save()
+            report(source, target, true, true)
+        else
+            notify(source, doneKey, nil, 'success')
+        end
     else
         notify(source, 'error.no_skill', nil, 'error')
     end
@@ -309,12 +374,13 @@ WCore.Commands.Add('xp', Lang:t('command.xp.help'), params('xp', { 'skill' }), t
     end
 end, 'user')
 
+-- levels are their own metadata table: AddXp here checked 'levels' and then added XP instead
 WCore.Commands.Add('givelevel', Lang:t('command.givelevel.help'), params('givelevel', { 'id', 'skill', 'amount' }), true, function(source, args)
-    changeSkill(source, args, 'levels', 'AddXp', 'info.xp_added')
+    changeSkill(source, args, 'levels', 'AddLevel', 'info.xp_added')
 end, 'admin')
 
 WCore.Commands.Add('removelevel', Lang:t('command.removelevel.help'), params('removelevel', { 'id', 'skill', 'amount' }), true, function(source, args)
-    changeSkill(source, args, 'levels', 'RemoveXp', 'info.xp_removed')
+    changeSkill(source, args, 'levels', 'RemoveLevel', 'info.xp_removed')
 end, 'admin')
 
 WCore.Commands.Add('level', Lang:t('command.level.help'), params('level', { 'skill' }), true, function(source, args)
@@ -374,23 +440,32 @@ local function joinArgs(args)
     return text .. ' '
 end
 
+-- "Citizen [12]": the speaker's citizen id, the one id staff and players use everywhere (a server
+-- id changes on every connection and, being digits too, would be read as someone else's citizen
+-- id). A player with no character in play yet shows his server id written the '#5' way.
+local function speakerLabel(source)
+    local Player = WCore.Functions.GetPlayer(source)
+    local id = Player and Player.PlayerData.citizenid or ('#' .. tostring(source))
+    return Lang:t('info.citizen', { id = id })
+end
+
 WCore.Commands.Add('me', Lang:t('command.me.help'), params('me', { 'message' }), false, function(source, args)
     local text = joinArgs(args)
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'me')
-    TriggerClientEvent('sendProximityMessage', -1, source, Lang:t('info.citizen', { id = source }), text, { 255, 255, 255 })
+    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 255, 255, 255 })
 end, 'user')
 
 WCore.Commands.Add('do', Lang:t('command.do.help'), params('me', { 'message' }), false, function(source, args)
     local text = joinArgs(args)
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'do')
-    TriggerClientEvent('sendProximityMessage', -1, source, Lang:t('info.citizen', { id = source }), text, { 145, 209, 144 })
+    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 145, 209, 144 })
 end, 'user')
 
 WCore.Commands.Add('try', Lang:t('command.try.help'), params('me', { 'message' }), false, function(source, args)
     local text = joinArgs(args)
     local succeeded = math.random(1, 2) == 1
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'try', nil, succeeded)
-    TriggerClientEvent('sendProximityMessage', -1, source, Lang:t('info.citizen', { id = source }),
+    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source),
         Lang:t(succeeded and 'info.try_success' or 'info.try_fail', { text = text }), { 32, 151, 247 })
 end, 'user')
 

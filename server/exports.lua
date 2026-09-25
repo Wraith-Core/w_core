@@ -400,6 +400,60 @@ end
 WCore.Functions.BanPlayer = BanPlayer
 exports('BanPlayer', BanPlayer)
 
+--- Ban a character's account by its citizen id, in play or not. Staff names players by the citizen
+--- id only (w_core/server/citizen.lua): in play this is BanPlayer on his server id (row + drop);
+--- offline the ban row is written from the saved players row (its license, the account the ban
+--- checks at connect), with no discord / ip to add. '#5' names server id 5 explicitly.
+---@param citizenId string|number  the citizen id ('12', an old 'ABC12345') or '#<server id>'
+---@param reason string|nil
+---@param minutes number|nil       0 / nil = permanent
+---@param bannedBy string|nil
+---@param dropMessage string|nil   only used when the player is in play
+---@return boolean ok, string result  'success' | 'invalid_id' | 'not_found' | 'no_license' | BanPlayer's
+local function BanCitizen(citizenId, reason, minutes, bannedBy, dropMessage)
+    local target, why = w.citizen.resolve(citizenId)
+    if not target then return false, why or 'not_found' end
+    if target.online then return BanPlayer(target.source, reason, minutes, bannedBy, dropMessage) end
+
+    local license = target.license
+    if type(license) ~= 'string' or license == '' then return false, 'no_license' end
+
+    minutes = tonumber(minutes) or 0
+    if minutes < 0 then minutes = 0 end
+    local expire = BAN_PERMANENT
+    if minutes > 0 then
+        expire = os.time() + math.floor(minutes) * 60
+        if expire > BAN_PERMANENT then expire = BAN_PERMANENT end
+    end
+    reason = tostring(reason or 'No reason'):sub(1, 500)
+    bannedBy = tostring(bannedBy or 'System'):sub(1, 255)
+    -- bans.name: the account name the row was saved with, else the character's
+    local name = (target.row and target.row.name) or target.name or target.citizenid
+
+    MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        name, license, nil, nil, reason, expire, bannedBy,
+    })
+    TriggerEvent('w_log:server:CreateLog', 'bans', 'Player Banned', 'red',
+        ('%s [%s] was banned (offline) by %s for %s'):format(name, target.citizenid, bannedBy, reason), true)
+
+    -- the ban is on the account: someone connected with it (on another character) leaves now,
+    -- otherwise the ban would only bite at his next connection
+    for _, id in ipairs(GetPlayers()) do
+        local src = tonumber(id)
+        if src and WCore.Functions.GetIdentifier(src, 'license') == license then
+            if type(dropMessage) ~= 'string' or dropMessage == '' then
+                local t = os.date('*t', expire)
+                dropMessage = Lang:t('error.banned', { reason = reason, date = ('%s/%s/%s %s:%02d'):format(t.day, t.month, t.year, t.hour, t.min) })
+            end
+            DropPlayer(src, dropMessage)
+        end
+    end
+    return true, 'success'
+end
+
+WCore.Functions.BanCitizen = BanCitizen
+exports('BanCitizen', BanCitizen)
+
 --- Remove one ban row by its id.
 ---@param id number  bans.id
 ---@return boolean ok, string result  'success' | 'invalid_id' | 'not_found'

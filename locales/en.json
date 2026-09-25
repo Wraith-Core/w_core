@@ -5,6 +5,9 @@
         "identity_steam": "Steam",
         "identity_license": "Rockstar license",
         "not_online": "Player not online",
+        "invalid_citizen_id": "Invalid citizen ID (for a server ID put # in front, e.g. #5)",
+        "citizen_not_found": "No player with this citizen ID",
+        "not_applied": "Could not apply it to %{name}",
         "wrong_format": "Incorrect format",
         "missing_args": "Not every argument has been entered (x, y, z)",
         "missing_args2": "All arguments must be filled out!",
@@ -25,7 +28,8 @@
     "success": {
         "server_opened": "The server has been opened",
         "server_closed": "The server has been closed",
-        "teleported_waypoint": "Teleported To Waypoint."
+        "teleported_waypoint": "Teleported To Waypoint.",
+        "offline_saved": "Done for %{name}, who is offline: it applies when he joins"
     },
     "info": {
         "received_paycheck": "You received your paycheck of $%{value}",
@@ -42,7 +46,7 @@
         "xp_removed": "XP removed",
         "xp_info": "You have %{value} XP in %{value2}",
         "level_info": "You are level %{value} in %{value2}",
-        "your_id": "ID: %{value}",
+        "your_id": "Server ID: #%{value}",
         "your_cid": "Citizen ID: %{value}",
         "no_reason": "No reason specified",
         "server_closed_default": "Server Closed",
@@ -55,15 +59,18 @@
         "system": "System",
         "duty_on": "On",
         "duty_off": "Off",
-        "character_deleted": "An admin deleted the character you are currently playing"
+        "character_deleted": "An admin deleted the character you are currently playing",
+        "character_blocked": "This character is suspended: contact the administration (reason: %{reason})",
+        "character_deletion_pending": "its deletion is not finished yet",
+        "character_moved": "An admin changed your character's citizen ID; please join again"
     },
     "command": {
         "tp": {
             "help": "TP To Player or Coords (Admin Only)",
             "params": {
                 "x": {
-                    "name": "id/x",
-                    "help": "ID of player or X position"
+                    "name": "citizenid/x",
+                    "help": "Citizen ID of a player (# before a server ID, e.g. #5), a location name, or X position"
                 },
                 "y": {
                     "name": "y",
@@ -82,8 +89,8 @@
             "help": "Give Player Permissions (God Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "ID of player"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online only (# before a server ID, e.g. #5)"
                 },
                 "permission": {
                     "name": "permission",
@@ -95,8 +102,8 @@
             "help": "Remove Player Permissions (God Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "ID of player"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online only (# before a server ID, e.g. #5)"
                 },
                 "permission": {
                     "name": "permission",
@@ -144,8 +151,8 @@
             "help": "Give A Player Money (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "moneytype": {
                     "name": "moneytype",
@@ -161,8 +168,8 @@
             "help": "Set Players Money Amount (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "moneytype": {
                     "name": "moneytype",
@@ -181,8 +188,8 @@
             "help": "Set A Players Job (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "job": {
                     "name": "job",
@@ -201,8 +208,8 @@
             "help": "Set A Players Gang (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "gang": {
                     "name": "gang",
@@ -218,8 +225,8 @@
             "help": "Give A Player XP (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "skill": {
                     "name": "skill",
@@ -235,8 +242,8 @@
             "help": "Remove XP From A Player (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "skill": {
                     "name": "skill",
@@ -261,8 +268,8 @@
             "help": "Give A Player Levels (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "skill": {
                     "name": "skill",
@@ -278,8 +285,8 @@
             "help": "Remove Levels From A Player (Admin Only)",
             "params": {
                 "id": {
-                    "name": "id",
-                    "help": "Player ID"
+                    "name": "citizenid",
+                    "help": "The player's citizen ID, online or offline (# before a server ID, e.g. #5)"
                 },
                 "skill": {
                     "name": "skill",
@@ -319,7 +326,7 @@
             "help": "Try something, with a random outcome"
         },
         "id": {
-            "help": "Check Your ID #"
+            "help": "Check your server ID (#)"
         },
         "cid": {
             "help": "Check Your Citizen ID #"

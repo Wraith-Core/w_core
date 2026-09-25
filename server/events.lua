@@ -140,25 +140,18 @@ RegisterNetEvent('WCore:UpdatePlayer', function()
     Player.Functions.Save()
 end)
 
-RegisterNetEvent('WCore:Server:SetMetaData', function(meta, data)
-    local src = source
-    local Player = WCore.Functions.GetPlayer(src)
-    if not Player then return end
-    if meta == 'hunger' or meta == 'thirst' then
-        if data > 100 then
-            data = 100
-        end
-        -- a revive / an admin refill: hand the value to w_hud, which mirrors it back into the metadata
-        if hudOwnsNeeds() then
-            exports.w_hud:SetNeed(src, meta, data)
-            return
-        end
-    end
-    Player.Functions.SetMetaData(meta, data)
-    if not hudOwnsNeeds() then
-        TriggerClientEvent('hud:client:UpdateNeeds', src, Player.PlayerData.metadata.hunger, Player.PlayerData.metadata.thirst, 100)
-    end
-end)
+-- ⚠️ A net event: any client can fire it, with any key and any value, and it used to write both
+--   into the sender's own metadata as sent: 'injail' 0 walked out of prison, 'criminalrecord' wiped
+--   a file, 'isdead' / 'inlaststand' / 'ishandcuffed' faked what the police and medic checks read,
+--   and 'hunger' / 'thirst' 100 fed a player whenever he liked, around w_hud's food rules.
+--   Nothing a client sends here is written any more. Its last two callers are the server's now:
+--     hunger / thirst  w_ambulancejob refills them on the server with every heal it grants
+--                      (exports.w_hud:SetNeed, or this metadata when w_hud is not running)
+--     ishandcuffed     w_policejob clears it on the server when a character loads or logs out
+--   A server script sets metadata with Player.Functions.SetMetaData and needs with
+--   exports.w_hud:SetNeed. The event stays registered so an old client script that still fires it
+--   is dropped here, quietly, instead of warning in the console on every call.
+RegisterNetEvent('WCore:Server:SetMetaData', function() end)
 
 RegisterNetEvent('WCore:ToggleDuty', function()
     local src = source

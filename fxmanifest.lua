@@ -51,6 +51,7 @@ server_scripts {
     'server/identifiers.lua',
     'server/economy.lua',
     'server/player.lua',
+    'server/citizen.lua',     -- the sequential citizen id, blocks, reassign, the migration
     'server/events.lua',
     'server/commands.lua',
     'server/exports.lua',

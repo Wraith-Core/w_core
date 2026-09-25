@@ -13,9 +13,21 @@ function WCore.Player.Login(source, citizenid, newData)
 			return false
 		end
 		if citizenid then
+			-- a character being deleted (or moved to another number) right now is not played
+			-- meanwhile: its row still exists until the purge's last step (server/citizen.lua)
+			if WCore.Citizen and WCore.Citizen.IsBusy and WCore.Citizen.IsBusy(citizenid) then return false, 'busy' end
 			local license = WCore.Functions.GetIdentifier(source, "license")
 			local PlayerData = MySQL.prepare.await("SELECT * FROM players where citizenid = ?", { citizenid })
 			if PlayerData and license == PlayerData.license then
+				-- a character staff blocked is not played (the account's other characters are)
+				local block = WCore.Citizen and WCore.Citizen.GetBlock(citizenid)
+				if block then
+					-- through the notify w_core's client already handles (nothing listens to a
+					-- dedicated event), as a key: translated in the player's own language
+					TriggerClientEvent('WCore:Notify', source, { key = 'info.character_blocked',
+						subs = { reason = (block.reason and block.reason ~= '') and block.reason or '-' } }, 'error', 7000)
+					return false, 'blocked'
+				end
 				PlayerData.money = json.decode(PlayerData.money)
 				PlayerData.job = json.decode(PlayerData.job)
 				PlayerData.position = json.decode(PlayerData.position)
@@ -26,6 +38,9 @@ function WCore.Player.Login(source, citizenid, newData)
 				else
 					PlayerData.gang = {}
 				end
+				-- asked again after the awaits above: a deletion that started meanwhile found no one
+				-- to kick (CreatePlayer asks once more, right before the character is put in play)
+				if WCore.Citizen and WCore.Citizen.IsBusy(citizenid) then return false, 'busy' end
 				return WCore.Player.CheckPlayerData(source, PlayerData) ~= nil
 			else
 				DropPlayer(source, Lang:t("info.exploit_dropped"))
@@ -325,6 +340,13 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 		self.Functions.UpdatePlayerData()
 	end
 
+	-- Who, for the levels log. An offline player (a staff command on a citizen id) has neither a
+	-- server id nor a connection name: concatenating nil raised after the metadata had changed.
+	local function logWho()
+		local src = self.PlayerData.source
+		return tostring(src and GetPlayerName(src) or self.PlayerData.name or '?'), src and tostring(src) or 'offline'
+	end
+
     self.Functions.AddXp = function(skill, amount)
 		local skill = skill:lower()
 		local amount = tonumber(amount)
@@ -332,7 +354,8 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 			self.PlayerData.metadata.xp[skill] = self.PlayerData.metadata.xp[skill] + amount
 			self.Functions.UpdateLevelData(skill)
 			self.Functions.UpdatePlayerData()
-			TriggerEvent('w_log:server:CreateLog', 'levels', 'AddXp', 'lightgreen', '**'..GetPlayerName(self.PlayerData.source) .. ' (citizenid: '..self.PlayerData.citizenid..' | id: '..self.PlayerData.source..')** has received: '..amount..'xp in the skill: '..skill..'. Their current xp amount is: '..self.PlayerData.metadata['xp'][skill])
+			local name, id = logWho()
+			TriggerEvent('w_log:server:CreateLog', 'levels', 'AddXp', 'lightgreen', '**'..name .. ' (citizenid: '..self.PlayerData.citizenid..' | id: '..id..')** has received: '..amount..'xp in the skill: '..skill..'. Their current xp amount is: '..self.PlayerData.metadata['xp'][skill])
 			return true
 		end
 		return false
@@ -345,7 +368,8 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 			self.PlayerData.metadata.xp[skill] = self.PlayerData.metadata.xp[skill] - amount
 			self.Functions.UpdateLevelData(skill)
 			self.Functions.UpdatePlayerData()
-			TriggerEvent('w_log:server:CreateLog', 'levels', 'RemoveXp', 'lightgreen', '**'..GetPlayerName(self.PlayerData.source) .. ' (citizenid: '..self.PlayerData.citizenid..' | id: '..self.PlayerData.source..')** was stripped of: '..amount..'xp in the skill: '..skill..'. Their current xp amount is: '..self.PlayerData.metadata['xp'][skill])
+			local name, id = logWho()
+			TriggerEvent('w_log:server:CreateLog', 'levels', 'RemoveXp', 'lightgreen', '**'..name .. ' (citizenid: '..self.PlayerData.citizenid..' | id: '..id..')** was stripped of: '..amount..'xp in the skill: '..skill..'. Their current xp amount is: '..self.PlayerData.metadata['xp'][skill])
 			return true
 		end
 		return false
@@ -358,7 +382,8 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 			self.PlayerData.metadata.levels[level] = self.PlayerData.metadata.levels[level] + amount
 			self.Functions.UpdateLevelData(level)
 			self.Functions.UpdatePlayerData()
-			TriggerEvent('w_log:server:CreateLog', 'levels', 'AddXp', 'lightgreen', '**'..GetPlayerName(self.PlayerData.source) .. ' [CitizenID: '..self.PlayerData.citizenid..' | id: '..self.PlayerData.source..']** got '..level..' levels '..amount..' [current level: '..self.PlayerData.metadata.levels[level])
+			local name, id = logWho()
+			TriggerEvent('w_log:server:CreateLog', 'levels', 'AddXp', 'lightgreen', '**'..name .. ' [CitizenID: '..self.PlayerData.citizenid..' | id: '..id..']** got '..level..' levels '..amount..' [current level: '..self.PlayerData.metadata.levels[level])
 			return true
 		end
 		return false
@@ -371,7 +396,8 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 			self.PlayerData.metadata.levels[level] = self.PlayerData.metadata.levels[level] - amount
 			self.Functions.UpdateLevelData(level)
 			self.Functions.UpdatePlayerData()
-			TriggerEvent('w_log:server:CreateLog', 'levels', 'RemoveXp', 'lightgreen', '**'..GetPlayerName(self.PlayerData.source) .. ' [CitizenID: '..self.PlayerData.citizenid..' | id: '..self.PlayerData.source..']** lost '..level..' levels '..amount..' current level: '..self.PlayerData.metadata.levels[level])
+			local name, id = logWho()
+			TriggerEvent('w_log:server:CreateLog', 'levels', 'RemoveXp', 'lightgreen', '**'..name .. ' [CitizenID: '..self.PlayerData.citizenid..' | id: '..id..']** lost '..level..' levels '..amount..' current level: '..self.PlayerData.metadata.levels[level])
 			return true
 		end
 		return false
@@ -452,6 +478,16 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 	if self.Offline then
 		return self
 	else
+		-- the last check before the character is in play, with no await between it and the entry
+		-- below: a purge (or a reassign) that started while this login awaited the database kicked
+		-- no one, and a row a purge deleted meanwhile (read just before) is gone for good
+		local Citizen = WCore.Citizen
+		-- (nor a row a reassign or a transfer moved to another number meanwhile: this copy still
+		-- carries the old one)
+		if Citizen and (Citizen.IsBusy(self.PlayerData.citizenid) or (Citizen.RowPurged and Citizen.RowPurged(self.PlayerData.id))
+			or (Citizen.RowMoved and Citizen.RowMoved(self.PlayerData.id, self.PlayerData.citizenid))) then
+			return nil
+		end
 		WCore.Players[self.PlayerData.source] = self
 		WCore.Player.Save(self.PlayerData.source)
 
@@ -520,11 +556,61 @@ end
 
 -- Save player info to database (make sure citizenid is the primary key in your database)
 
+-- players-row writes in flight, by citizen id ({ n, at }). Deleting a character waits for its
+-- logout save (server/citizen.lua Purge): landing after the DELETE, that INSERT ... ON DUPLICATE
+-- KEY UPDATE would bring the deleted row back.
+local savesInFlight = {}
+-- a write whose callback never came (a failed query) is not waited for forever
+local SAVE_TRACK_MS = 15000
+
+local function saveStarted(citizenid)
+	local s = savesInFlight[citizenid]
+	if s then
+		s.n, s.at = s.n + 1, GetGameTimer()
+	else
+		savesInFlight[citizenid] = { n = 1, at = GetGameTimer() }
+	end
+end
+
+local function saveDone(citizenid)
+	local s = savesInFlight[citizenid]
+	if not s then return end
+	s.n = s.n - 1
+	if s.n <= 0 then savesInFlight[citizenid] = nil end
+end
+
+function WCore.Player.SaveInFlight(citizenid)
+	local s = savesInFlight[citizenid]
+	if not s then return false end
+	if GetGameTimer() - s.at > SAVE_TRACK_MS then
+		savesInFlight[citizenid] = nil
+		return false
+	end
+	return true
+end
+
+-- a character just purged: a save still arriving for it (an offline Player object another
+-- resource holds, a late logout save) must not re-create its row -- by its number while the purge
+-- guard holds, and for good by the players row it was loaded from (PlayerData.id): once staff
+-- gives the number to someone else, that save would overwrite the new holder's row. The same for
+-- a character moved to another number (reassign, transfer): a copy loaded before the move still
+-- carries the old number, and its save would write a ghost row under it or over its next holder.
+local function saveBlocked(PlayerData)
+	local Citizen = WCore.Citizen
+	if Citizen == nil then return false end
+	return (Citizen.SaveBlocked ~= nil and Citizen.SaveBlocked(PlayerData.citizenid))
+		or (Citizen.RowPurged ~= nil and Citizen.RowPurged(PlayerData.id))
+		or (Citizen.RowMoved ~= nil and Citizen.RowMoved(PlayerData.id, PlayerData.citizenid))
+end
+
 function WCore.Player.Save(source)
 	local ped = GetPlayerPed(source)
 	local pcoords = GetEntityCoords(ped)
 	local PlayerData = WCore.Players[source].PlayerData
 	if PlayerData then
+		local citizenid = PlayerData.citizenid
+		if saveBlocked(PlayerData) then return end
+		saveStarted(citizenid)
 		MySQL.insert(
 			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
 			{
@@ -538,7 +624,8 @@ function WCore.Player.Save(source)
 				gang = json.encode(PlayerData.gang),
 				position = json.encode(pcoords),
 				metadata = json.encode(PlayerData.metadata),
-			}
+			},
+			function() saveDone(citizenid) end
 		)
 		if GetResourceState("w_inventory") ~= "missing" then
 			exports["rsg-inventory"]:SaveInventory(source)
@@ -553,6 +640,9 @@ end
 
 function WCore.Player.SaveOffline(PlayerData)
 	if PlayerData then
+		local citizenid = PlayerData.citizenid
+		if saveBlocked(PlayerData) then return end
+		saveStarted(citizenid)
 		MySQL.Async.insert(
 			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
 			{
@@ -566,7 +656,8 @@ function WCore.Player.SaveOffline(PlayerData)
 				gang = json.encode(PlayerData.gang),
 				position = json.encode(PlayerData.position),
 				metadata = json.encode(PlayerData.metadata),
-			}
+			},
+			function() saveDone(citizenid) end
 		)
 		if GetResourceState("w_inventory") ~= "missing" then
 			exports["rsg-inventory"]:SaveInventory(PlayerData, true)
@@ -581,42 +672,44 @@ end
 
 -- Delete character
 
--- Tables that carry a citizenid and exist in this stack (a table that does not exist rolls the
--- whole transaction back and the character survives). Appearance and clothes rows belong to
--- w_creators, needs to w_hud, the bag to w_inventory: each deletes its own.
-local playertables = { -- Add tables as needed
-	{ table = "players", column = "citizenid" },
-	{ table = "bank_accounts", column = "citizenid" },
-	{ table = "stables", column = "charidentifier" }, -- w_stables
-}
+-- A character is deleted by server/citizen.lua's Purge. The player's own deletion from the
+-- character selection and staff's deletion are the same full purge: every resource removes its
+-- part, assets are released, the money goes back to the reserve, the history moves to a
+-- tombstone, and the number is left clean for someone else (a vanity id that was not renewed).
+
+-- The purge's reasons -> the few the character selection knows (w_creators DELETE_REFUSALS): a
+-- resource still busy (a write in flight, a player still leaving) is a retry; a ledger or a
+-- resource that is not ready says so; an asset its resource could not release says so; anything
+-- else is a failure the server console explains.
+local function selectionReason(why)
+	why = tostring(why or '')
+	if why == 'assets' then return 'assets' end
+	if why:find('economy', 1, true) or why:find('not_ready', 1, true) or why:find('unavailable', 1, true) then
+		return 'economy_not_ready'
+	end
+	if why:find('busy', 1, true) or why:find('online', 1, true) or why:find('pending', 1, true)
+		or why == 'balance_changed' or why == 'retry' or why == 'restarting' then
+		return 'busy'
+	end
+	return 'database'
+end
 
 function WCore.Player.DeleteCharacter(source, citizenid)
 	local license = WCore.Functions.GetIdentifier(source, "license")
 	local result = MySQL.scalar.await("SELECT license FROM players where citizenid = ?", { citizenid })
+	-- a character that is already gone (deleted meanwhile) is no exploit: nothing to delete
+	if result == nil then return false, 'database' end
 	if license == result then
-        if not WCore.Economy.ready() or not exports.w_centralbank:CanDeleteCharacter(citizenid) then return false end
-		local query = "DELETE FROM %s WHERE %s = ?"
-		local tableCount = #playertables
-		local queries = table.create(tableCount, 0)
-
-		for i = 1, tableCount do
-			local v = playertables[i]
-			queries[i] = { query = query:format(v.table, v.column), values = { citizenid } }
+		-- the money goes back to the reserve during the purge: without the ledger nothing starts
+		if not WCore.Economy.ready() then return false, 'economy_not_ready' end
+		local by = ("%s (%s)"):format(GetPlayerName(source) or "?", license)
+		-- `requester`: this player's own session is never kicked for its own deletion
+		local ok, why, where = WCore.Citizen.Purge(citizenid, by, { requester = source })
+		if ok ~= true then
+			w.print.error(("DeleteCharacter: %s refused by %s for %s"):format(tostring(why), tostring(where), citizenid))
+			return false, selectionReason(why)
 		end
-
-		local ok = MySQL.transaction.await(queries)
-		if ok then
-			TriggerEvent(
-				"w_log:server:CreateLog",
-				"joinleave",
-				"Character Deleted",
-				"red",
-				"**" .. GetPlayerName(source) .. "** " .. license .. " deleted **" .. citizenid .. "**.."
-			)
-		else
-			w.print.error(('DeleteCharacter: transaction failed for %s'):format(citizenid))
-		end
-		return ok == true
+		return true
 	else
 		DropPlayer(source, Lang:t("info.exploit_dropped"))
 		TriggerEvent(
@@ -627,38 +720,21 @@ function WCore.Player.DeleteCharacter(source, citizenid)
 			GetPlayerName(source) .. " Has Been Dropped For Character Deletion Exploit",
 			true
 		)
+		-- the caller still gets an answer: nil read as "accepted" and the creator then polled
+		-- five seconds for a row that never goes away
+		return false, 'exploit'
 	end
 end
 
+--- The same purge without the ownership check (console / other resources). Returns true, report |
+--- false, reason, resource.
 function WCore.Player.ForceDeleteCharacter(citizenid)
-	local result = MySQL.scalar.await("SELECT license FROM players where citizenid = ?", { citizenid })
-	if result then
-		local query = "DELETE FROM %s WHERE %s = ?"
-		local tableCount = #playertables
-		local queries = table.create(tableCount, 0)
-		local Player = WCore.Functions.GetPlayerByCitizenId(citizenid)
-
-		if Player then
-			DropPlayer(Player.PlayerData.source, Lang:t("info.character_deleted"))
-		end
-		for i = 1, tableCount do
-			local v = playertables[i]
-			queries[i] = { query = query:format(v.table, v.column), values = { citizenid } }
-		end
-
-		local ok = MySQL.transaction.await(queries)
-		if ok then
-			TriggerEvent(
-				"w_log:server:CreateLog",
-				"joinleave",
-				"Character Force Deleted",
-				"red",
-				"Character **" .. citizenid .. "** got deleted"
-			)
-		end
-		return ok == true
+	local ok, why, where = WCore.Citizen.Purge(citizenid, "force-delete")
+	if ok ~= true then
+		w.print.error(("ForceDeleteCharacter: %s refused by %s for %s"):format(tostring(why), tostring(where), tostring(citizenid)))
+		return false, why, where
 	end
-	return false
+	return true, why
 end
 
 -- Inventory Backwards Compatibility
@@ -690,7 +766,10 @@ end
 
 -- Util Functions
 
+-- ★ The citizen id is sequential now: 1, 2, 3 ... (server/citizen.lua). The old random form
+--   (3 letters + 5 digits) is only read: `wcore_citizenid run` moves existing characters over.
 function WCore.Player.CreateCitizenId()
+	if WCore.Citizen and WCore.Citizen.Next then return WCore.Citizen.Next() end
 	local UniqueFound = false
 	local CitizenId = nil
 	while not UniqueFound do
