@@ -296,8 +296,11 @@ local EXACT = {
     { 'w_baloot_players', 'identifier', 'data' },
     -- w_butcher (its PurgeCharacter deletes them; bp_Butcher's bp_butcher_relations below until w_butcher renames it)
     { 'w_butcher_relations', 'citizenid', 'data' },
+    -- w_mdt (ex bp_mdt, same tables): its PurgeCharacter deletes the active warrants (a deleted
+    -- character cannot be caught); a sentence or a citation happened, history under the tombstone
+    { 'mdt_records', 'citizenid', 'history' }, { 'mdt_warrants', 'target_citizenid', 'data' },
     -- resources without a PurgeCharacter of their own
-    { 'bp_butcher_relations', 'citizenid', 'data' }, { 'mdt_records', 'citizenid', 'history' }, { 'mdt_warrants', 'target_citizenid', 'history' },
+    { 'bp_butcher_relations', 'citizenid', 'data' },
     -- w_kingdom_v2 deposes a king by storing '' (Store.SeatKing)
     { 'wk2_kingdoms', 'king_charid', 'asset', release = "`king_charid` = '', `king_name` = ''", owner = 'w_kingdom_v2' },
     { 'wk2_places', 'updated_by', 'history' },
@@ -412,7 +415,7 @@ local SHAPED = {
     { 'w_survival_audit', 'character_key', { '^[^|]+|%s$' }, 'history' },
     { 'w_survival_loot_nodes', 'last_looted_by', { '^[^|]+|%s$' }, 'history' },
     { 'w_survival_regions', 'last_actor', { '^[^|]+|%s$' }, 'history' },
-    -- bp_mdt (no PurgeCharacter of its own): the people a report names, stored as citizen ids
+    -- w_mdt (its purge leaves the reports alone: history): the people a report names, stored as citizen ids
     -- joined by ', ' ('12, 7, ABC12345'). Each entry is anchored by the list's start, its end or
     -- the separator, so '12' never matches inside '112' or a word of the report's text.
     { 'mdt_reports', 'involved_ids', { '^%s$', '^%s,', ', %s,', ', %s$' }, 'history' },
@@ -1116,7 +1119,7 @@ end
 -- still deletes its leftover rows, and refuses if one of them is an asset); a started one without
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
-                      'w_baloot', 'w_legal', 'w_butcher', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector', 'w_centralbank' }
+                      'w_baloot', 'w_legal', 'w_butcher', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
