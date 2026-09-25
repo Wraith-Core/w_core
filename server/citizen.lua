@@ -294,6 +294,8 @@ local EXACT = {
     { 'tribe_wars', 'declared_by', 'history' }, { 'tribe_election_votes', 'voter', 'data' },
     -- w_baloot (w_baloot_tables.created_by is the account's NAME, not a character id)
     { 'w_baloot_players', 'identifier', 'data' },
+    -- w_butcher (its PurgeCharacter deletes them; bp_Butcher's bp_butcher_relations below until w_butcher renames it)
+    { 'w_butcher_relations', 'citizenid', 'data' },
     -- resources without a PurgeCharacter of their own
     { 'bp_butcher_relations', 'citizenid', 'data' }, { 'mdt_records', 'citizenid', 'history' }, { 'mdt_warrants', 'target_citizenid', 'history' },
     -- w_kingdom_v2 deposes a king by storing '' (Store.SeatKing)
@@ -1114,7 +1116,7 @@ end
 -- still deletes its leftover rows, and refuses if one of them is an asset); a started one without
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
-                      'w_baloot', 'w_legal', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector', 'w_centralbank' }
+                      'w_baloot', 'w_legal', 'w_butcher', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
