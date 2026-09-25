@@ -406,20 +406,20 @@ WCore.Commands.Add('ooc', Lang:t('command.ooc.help'), {}, false, function(source
     for _, v in pairs(Players) do
         if v == source then
             TriggerClientEvent('chat:addMessage', v, {
-                color = { 0, 0, 255 },
+                color = { 185, 175, 156 }, -- dim paper (was blue)
                 multiline = true,
                 args = { prefix, message }
             })
         elseif #(playerCoords - GetEntityCoords(GetPlayerPed(v))) < 20.0 then
             TriggerClientEvent('chat:addMessage', v, {
-                color = { 0, 0, 255 },
+                color = { 185, 175, 156 }, -- dim paper (was blue)
                 multiline = true,
                 args = { prefix, message }
             })
         elseif WCore.Functions.HasPermission(v, 'admin') then
             if WCore.Functions.IsOptin(v) then
                 TriggerClientEvent('chat:addMessage', v, {
-                    color = { 0, 0, 255 },
+                    color = { 185, 175, 156 }, -- dim paper (was blue)
                     multiline = true,
                     args = { Lang:t('info.ooc_proximity', { name = GetPlayerName(source) }), message }
                 })
@@ -452,13 +452,13 @@ end
 WCore.Commands.Add('me', Lang:t('command.me.help'), params('me', { 'message' }), false, function(source, args)
     local text = joinArgs(args)
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'me')
-    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 255, 255, 255 })
+    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 237, 230, 214 }) -- paper
 end, 'user')
 
 WCore.Commands.Add('do', Lang:t('command.do.help'), params('me', { 'message' }), false, function(source, args)
     local text = joinArgs(args)
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'do')
-    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 145, 209, 144 })
+    TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source), text, { 185, 175, 156 }) -- dim paper (was green)
 end, 'user')
 
 WCore.Commands.Add('try', Lang:t('command.try.help'), params('me', { 'message' }), false, function(source, args)
@@ -466,7 +466,7 @@ WCore.Commands.Add('try', Lang:t('command.try.help'), params('me', { 'message' }
     local succeeded = math.random(1, 2) == 1
     TriggerClientEvent('WCore:triggerDisplay', -1, text, source, 'try', nil, succeeded)
     TriggerClientEvent('sendProximityMessage', -1, source, speakerLabel(source),
-        Lang:t(succeeded and 'info.try_success' or 'info.try_fail', { text = text }), { 32, 151, 247 })
+        Lang:t(succeeded and 'info.try_success' or 'info.try_fail', { text = text }), { 185, 175, 156 }) -- dim paper (was blue)
 end, 'user')
 
 -- IDs
