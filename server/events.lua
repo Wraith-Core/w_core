@@ -52,15 +52,15 @@ local function onPlayerConnecting(name, _, deferrals)
     deferrals.update(string.format(Lang:t('info.join_server'), name))
     Wait(0)
 
-    if not license then
-      return deferrals.done(Lang:t('error.no_valid_license'))
-    elseif isBanned then
-        return deferrals.done(Reason)
-    elseif isLicenseAlreadyInUse and WCore.Config.Server.CheckDuplicateLicense then
-        return deferrals.done(Lang:t('error.duplicate_license'))
-    elseif isWhitelist and not whitelisted then
-      return deferrals.done(Lang:t('error.not_whitelisted'))
-    end
+    -- if not license then
+    --   return deferrals.done(Lang:t('error.no_valid_license'))
+    -- elseif isBanned then
+    --     return deferrals.done(Reason)
+    -- elseif isLicenseAlreadyInUse and WCore.Config.Server.CheckDuplicateLicense then
+    --     return deferrals.done(Lang:t('error.duplicate_license'))
+    -- elseif isWhitelist and not whitelisted then
+    --   return deferrals.done(Lang:t('error.not_whitelisted'))
+    -- end
 
     deferrals.done()
 
