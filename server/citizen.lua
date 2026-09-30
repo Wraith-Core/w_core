@@ -296,6 +296,18 @@ local EXACT = {
     { 'w_baloot_players', 'identifier', 'data' },
     -- w_butcher (its PurgeCharacter deletes them; bp_Butcher's bp_butcher_relations below until w_butcher renames it)
     { 'w_butcher_relations', 'citizenid', 'data' },
+    -- w_frontier_jobs (its PurgeCharacter ends the character's contracts, voids unpaid shares and
+    -- deletes the 'data' rows; the history is tombstoned / renamed by w_core)
+    { 'wfj_instances',    'owner_cid',   'history' },
+    { 'wfj_participants', 'citizenid',   'history' },
+    { 'wfj_entitlements', 'citizenid',   'history' },
+    { 'wfj_reconcile',    'actor_cid',   'history' },
+    { 'wfj_nodes',        'captured_by', 'history' },
+    { 'wfj_nodes',        'approved_by', 'history' },
+    { 'wfj_routes',       'approved_by', 'history' },
+    { 'wfj_reputation',   'citizenid',   'data' },
+    { 'wfj_cooldowns',    'citizenid',   'data' },
+    { 'wfj_rentals',      'citizenid',   'history' },
     -- w_mdt (ex bp_mdt, same tables): its PurgeCharacter deletes the active warrants (a deleted
     -- character cannot be caught); a sentence or a citation happened, history under the tombstone
     { 'mdt_records', 'citizenid', 'history' }, { 'mdt_warrants', 'target_citizenid', 'data' },
@@ -1119,7 +1131,8 @@ end
 -- still deletes its leftover rows, and refuses if one of them is an asset); a started one without
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
-                      'w_baloot', 'w_legal', 'w_butcher', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector', 'w_centralbank' }
+                      'w_baloot', 'w_legal', 'w_butcher', 'w_frontier_jobs', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory',
+                      'w_connector', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
