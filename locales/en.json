@@ -38,7 +38,7 @@
         "on_duty": "You are now on duty!",
         "off_duty": "You are now off duty!",
         "checking_ban": "Hello %s. We are checking if you are banned.",
-        "join_server": "Welcome %s to Wraith Core.",
+        "join_server": "Welcome %s to Red River.",
         "checking_whitelisted": "Hello %s. We are checking your allowance.",
         "exploit_banned": "You have been banned for cheating. Check our Discord for more information: %{discord}",
         "exploit_dropped": "You Have Been Kicked For Exploitation",
@@ -333,7 +333,7 @@
         }
     },
     "loading": {
-        "text1": "Welcome to Wraith Core RedM",
+        "text1": "Welcome to Red River",
         "text2": "Enjoy your time!",
         "text3": "Don't squat with your spurs on!"
     }
