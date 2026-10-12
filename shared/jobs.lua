@@ -81,15 +81,18 @@ WJobs = {
 		label_ar = "الإسعاف",
 		defaultDuty = true,
 		offDutyPay = false,
+		-- Trainee Doctor -> Minister of Health. `payment` is the paycheck, handed every
+		-- WConfig.Money.PayCheckTimeOut minutes while on duty (offDutyPay = false above), so it is the
+		-- grade ladder and the salary ladder in one table.
 		grades = {
             [0] = {
-                name = 'Recruit',
-                name_ar = "مستجد",
+                name = 'Trainee Doctor',
+                name_ar = "طبيب متدرب",
                 payment = 50
             },
 			[1] = {
-                name = 'Nurse',
-                name_ar = "ممرض",
+                name = 'Resident',
+                name_ar = "طبيب مقيم",
                 payment = 75
             },
 			[2] = {
@@ -98,13 +101,13 @@ WJobs = {
                 payment = 100
             },
 			[3] = {
-                name = 'Surgeon',
-                name_ar = "جرّاح",
+                name = 'Chief Surgeon',
+                name_ar = "الجرّاح",
                 payment = 125
             },
 			[4] = {
-                name = 'Chief',
-                name_ar = "رئيس الأطباء",
+                name = 'Minister of Health',
+                name_ar = "وزير الصحة",
 				isboss = true,
                 payment = 150
             },

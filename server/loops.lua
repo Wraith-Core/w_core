@@ -35,6 +35,13 @@ CreateThread(function()
     while true do
         Wait(60000 * WCore.Config.Money.PayCheckTimeOut)
 
+        -- One cycle id, stamped once per round: the journal key has to be single-use
+        -- (w_centralbank answers idempotency_conflict on a repeat under the same key), so it must
+        -- separate one employee from the next AND one round from the next. It used to be the job
+        -- name alone, which meant the first medic on the server took the money and everyone else
+        -- was told the company was too poor.
+        local cycle = os.time()
+
         for _, Player in pairs(WCore.Players) do
             if Player then
                 local payment = WJobs[Player.PlayerData.job.name]['grades'][tonumber(Player.PlayerData.job.grade.level)].payment
@@ -43,7 +50,7 @@ CreateThread(function()
                     local paid=false
                     if WCore.Economy.ready() then
                         local from=WCore.Config.Money.PayCheckSociety and ('society:'..Player.PlayerData.job.name) or 'central:reserve'
-                        paid=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.job.name)
+                        paid=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.citizenid..':'..cycle)
                     end
                     if paid then
                         TriggerClientEvent('WCore:Notify',Player.PlayerData.source,{key='info.received_paycheck',subs={value=payment}})
