@@ -52,6 +52,13 @@ local function onPlayerConnecting(name, _, deferrals)
     deferrals.update(string.format(Lang:t('info.join_server'), name))
     Wait(0)
 
+    -- ★ The ban check stays on (2026-10-14). It sat commented out with the rest below, so a ban from
+    --   w_admin's console (or BanPlayer / ExploitBan) dropped the player and he walked straight back
+    --   in: nothing else reads the `bans` table at connect (w_connector reads only its own wc_bans).
+    if isBanned then
+        return deferrals.done(Reason)
+    end
+
     -- if not license then
     --   return deferrals.done(Lang:t('error.no_valid_license'))
     -- elseif isBanned then
@@ -189,6 +196,10 @@ end)
 -- Wagon spawning for players (wagons, carriages, boats)
 -- server-side spawning callback (netId): the client turns the net id into the entity with
 -- NetworkGetEntityFromNetworkId / NetToVeh
+-- ★ Admins only (2026-10-14). Nothing in resources/ calls it, and open it let any client spawn any
+--   model anywhere, as often as it liked -- and an invalid model or far coords left SpawnVehicle's wait
+--   loops spinning forever.
 WCore.Functions.CreateCallback('WCore:Server:SpawnVehicle', function(source, cb, model, coords, warp)
+    if not WCore.Functions.HasPermission(source, 'admin') then return cb(nil) end
     cb(NetworkGetNetworkIdFromEntity(WCore.Functions.SpawnVehicle(source, model, coords, warp)))
 end)
