@@ -52,7 +52,7 @@ RanksCatalog = {
             n('command.removexp', '/removexp — سحب خبرة', '/removexp — remove XP', 'ينقص خبرة لاعب.', 'Removes XP from a player.'),
             n('command.givelevel', '/givelevel — رفع المستوى', '/givelevel — give level', 'يرفع مستوى لاعب.', 'Raises a player\'s level.'),
             n('command.removelevel', '/removelevel — إنزال المستوى', '/removelevel — remove level', 'ينزل مستوى لاعب.', 'Lowers a player\'s level.'),
-            n('command.revive', '/revive — إنعاش', '/revive — revive', 'ينعش لاعب ميت.', 'Revives a dead player.'),
+            n('command.medrevive', '/medrevive — إنعاش', '/medrevive — revive', 'ينعش لاعب ميت (w_medic، إذا Config.AdminRevive مفعّل).', 'Revives a dead player (w_medic, when Config.AdminRevive is on).'),
             n('command.aheal', '/aheal — علاج', '/aheal — heal', 'يعالج لاعب بالكامل.', 'Fully heals a player.'),
             n('command.kill', '/kill — قتل', '/kill — kill', 'يقتل لاعب.', 'Kills a player.'),
             n('command.setpain', '/setpain — الألم', '/setpain — set pain', 'يغيّر ألم لاعب.', 'Changes a player\'s pain.'),

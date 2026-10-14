@@ -76,41 +76,23 @@ WJobs = {
             },
         },
 	},
-	['ambulance'] = {
-		label = 'Medical',
-		label_ar = "الإسعاف",
+	-- ★ 2026-10-14: the doctors are w_medic's (it replaced w_ambulancejob). Its job is 'doctor' and
+	-- these are its ranks (w_medic config.lua Config.DoctorRanks: the same grades, names and
+	-- salaries -- keep both in step). `payment` is the paycheck, handed every
+	-- WConfig.Money.PayCheckTimeOut minutes while on duty (w_medic's own payroll is off here). The
+	-- deputy and the minister hire, promote and dismiss doctors at the Valentine desk (w_medic).
+	['doctor'] = {
+		label = 'Doctors',
+		label_ar = "الأطباء",
 		defaultDuty = true,
 		offDutyPay = false,
-		-- Trainee Doctor -> Minister of Health. `payment` is the paycheck, handed every
-		-- WConfig.Money.PayCheckTimeOut minutes while on duty (offDutyPay = false above), so it is the
-		-- grade ladder and the salary ladder in one table.
 		grades = {
-            [0] = {
-                name = 'Trainee Doctor',
-                name_ar = "طبيب متدرب",
-                payment = 50
-            },
-			[1] = {
-                name = 'Resident',
-                name_ar = "طبيب مقيم",
-                payment = 75
-            },
-			[2] = {
-                name = 'Doctor',
-                name_ar = "طبيب",
-                payment = 100
-            },
-			[3] = {
-                name = 'Chief Surgeon',
-                name_ar = "الجرّاح",
-                payment = 125
-            },
-			[4] = {
-                name = 'Minister of Health',
-                name_ar = "وزير الصحة",
-				isboss = true,
-                payment = 150
-            },
+            [0] = { name = 'Trainee Doctor', name_ar = "طبيب متدرب", payment = 10 },
+            [1] = { name = 'Experienced Doctor', name_ar = "طبيب متمرس", payment = 25 },
+            [2] = { name = 'Distinguished Doctor', name_ar = "طبيب إمتياز", payment = 35 },
+            [3] = { name = 'Doctor', name_ar = "دكتور", payment = 50 },
+            [4] = { name = 'Deputy Minister of Health', name_ar = "نائب وزير الصحة", isboss = true, payment = 100 },
+            [5] = { name = 'Minister of Health', name_ar = "وزير الصحة", isboss = true, payment = 100 },
         },
 	},
 	['judge'] = {
