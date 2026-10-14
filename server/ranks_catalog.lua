@@ -188,3 +188,89 @@ RanksMasterRoots = {
     'w_jobs', 'w_missions', 'w_map', 'w_doorlock', 'wraith_cinema', 'w_baloot', 'w_logs', 'w_hud', 'w_pausemenu',
     'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib',
 }
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- The WEBSITE's permissions (wraith7.com, through w_connector). One rank system for both: a rank
+-- holds these beside its in-game nodes, and the website reads them through w_connector
+-- (adminpanel:getRolesAndPermissions). They are no ACE (web = true: server/ranks.lua does not apply
+-- them in game) -- w_connector checks them itself, by exact name. The names are w_connector's
+-- PERMISSION_NODES (server/sv_schema.lua): the website's contract, append-only.
+-- ════════════════════════════════════════════════════════════════════════════
+
+local function w(node, ar, en) return n(node, ar, en, 'من الموقع: ' .. ar, 'On the website: ' .. en) end
+
+local WEB_GROUPS = {
+    { id = 'web_general', label = { ar = 'الموقع: عام', en = 'Website: general' }, nodes = {
+        w('access_admin_panel', 'دخول لوحة الموقع', 'Open the website panel'),
+        w('access_logs', 'السجلات', 'Logs'),
+    } },
+    { id = 'web_players', label = { ar = 'الموقع: اللاعبين', en = 'Website: players' }, nodes = {
+        w('players_page', 'صفحة اللاعبين والحقائب', 'Players page and bags'),
+        w('player.kick', 'طرد', 'Kick'), w('player.warn', 'تحذير', 'Warn'), w('player.removewarn', 'حذف تحذير', 'Remove a warning'),
+        w('player.heal', 'علاج', 'Heal'), w('player.revive', 'إنعاش', 'Revive'), w('player.respawn', 'إحياء', 'Respawn'),
+        w('player.kill', 'قتل', 'Kill'), w('player.freeze', 'تجميد', 'Freeze'), w('player.spectate', 'مراقبة (بث مباشر)', 'Spectate (live view)'),
+        w('player.message', 'رسالة خاصة', 'Private message'), w('player.troll', 'المقالب', 'Troll effects'),
+        w('player.removeweapon', 'سحب السلاح', 'Remove weapon'),
+        w('player.teleport.to_player', 'الذهاب للاعب', 'Go to player'), w('player.teleport.bring', 'إحضار لاعب', 'Bring player'),
+        w('player.inventory.remove_items', 'سحب أسلحة وأغراض', 'Remove weapons and items'),
+        w('player.inventory.clear', 'تفريغ الحقيبة', 'Clear the bag'),
+        w('add.item.to_player', 'إعطاء غرض', 'Give an item'), w('remove.item.from_player', 'سحب غرض', 'Take an item'),
+    } },
+    { id = 'web_bans', label = { ar = 'الموقع: الحظر', en = 'Website: bans' }, nodes = {
+        w('show_banned_players', 'قائمة المحظورين', 'Banned players list'), w('ban_history', 'سجل الحظر', 'Ban history'),
+        w('edit_ban', 'تعديل حظر', 'Edit a ban'), w('unban_player', 'رفع الحظر', 'Unban'),
+        w('player.ban.temporary', 'حظر مؤقت', 'Temporary ban'), w('player.ban.permanent', 'حظر دائم', 'Permanent ban'),
+        w('get_player_warnings', 'تحذيرات اللاعب', 'Player warnings'),
+    } },
+    { id = 'web_character', label = { ar = 'الموقع: الشخصيات', en = 'Website: characters' }, nodes = {
+        w('set.nickname', 'اللقب', 'Nickname'), w('set.firstname', 'الاسم الأول', 'First name'),
+        w('set.lastname', 'اسم العائلة', 'Last name'), w('set.age', 'العمر', 'Age'),
+        w('set.chardescription', 'الوصف', 'Description'), w('set.jobwithgrade', 'الوظيفة والرتبة', 'Job with grade'),
+        w('set.joblabel', 'اسم الوظيفة', 'Job label'), w('set.jobgrade', 'رتبة الوظيفة', 'Job grade'),
+        w('currency.addorremove', 'إضافة وسحب المال', 'Add or remove money'),
+        w('add.xp', 'إضافة خبرة', 'Add XP'), w('remove.xp', 'سحب خبرة', 'Remove XP'),
+    } },
+    { id = 'web_whitelist', label = { ar = 'الموقع: القائمة البيضاء', en = 'Website: whitelist' }, nodes = {
+        w('whitelist.view', 'مشاهدة', 'View'), w('whitelist.add', 'إضافة', 'Add'), w('whitelist.edit', 'تعديل', 'Edit'),
+        w('whitelist.remove', 'حذف', 'Remove'), w('whitelist.suspend', 'إيقاف', 'Suspend'),
+        w('whitelist.activate', 'تفعيل', 'Activate'), w('whitelist.approve', 'قبول', 'Approve'),
+    } },
+    { id = 'web_staff', label = { ar = 'الموقع: الإدارة', en = 'Website: staff' }, nodes = {
+        w('admins.view', 'قائمة الإدارة والرتب', 'Staff and ranks list'),
+        w('admin.action', 'طرد إداري', 'Kick a staff member'),
+        w('change.admin.role', 'تغيير رتبة إداري (للماستر)', 'Change a staff rank (master)'),
+        w('manage_permissions', 'إدارة الرتب (للماستر)', 'Manage ranks (master)'),
+        w('adminchat.view', 'قراءة شات الإدارة', 'Read the staff chat'), w('adminchat.send', 'الكتابة في شات الإدارة', 'Write in the staff chat'),
+        w('ignore_while_kicking_allplayers', 'ما ينطرد مع طرد الكل', 'Stays on a kick-all'),
+    } },
+    { id = 'web_reports', label = { ar = 'الموقع: البلاغات', en = 'Website: reports' }, nodes = {
+        w('admin.reports.view', 'مشاهدة', 'View'), w('admin.reports.claim', 'استلام', 'Claim'),
+        w('admin.reports.resolve', 'إنهاء', 'Resolve'), w('admin.reports.reopen', 'إعادة فتح', 'Reopen'),
+        w('admin.reports.message', 'الرد', 'Reply'),
+    } },
+    { id = 'web_server', label = { ar = 'الموقع: السيرفر', en = 'Website: server' }, nodes = {
+        w('view.statistics', 'الإحصائيات', 'Statistics'), w('view.livemap', 'الخريطة المباشرة', 'Live map'),
+        w('livemap.action', 'أوامر الخريطة', 'Live map actions'), w('resource.action', 'تشغيل وإيقاف السكربتات', 'Start and stop scripts'),
+        w('refresh_resources', 'تحديث السكربتات', 'Refresh scripts'), w('schedule_restart', 'جدولة إعادة التشغيل', 'Schedule a restart'),
+        w('send_announcement', 'إعلان', 'Announcement'), w('close_server_for_players', 'قفل السيرفر', 'Close the server'),
+        w('admin.kickall', 'طرد الكل', 'Kick everyone'),
+        w('server.time.control', 'الوقت', 'Time'), w('server.weather.control', 'الطقس', 'Weather'),
+        w('server.timescale.control', 'سرعة الوقت', 'Time scale'), w('server.wind.control', 'الرياح', 'Wind'),
+        w('server.syncdelay.control', 'تأخير المزامنة', 'Sync delay'),
+    } },
+    { id = 'web_site', label = { ar = 'الموقع: صفحات الموقع', en = 'Website: site pages' }, nodes = {
+        w('site.manage', 'إدارة الموقع', 'Manage the site'), w('site.rules', 'القوانين', 'Rules'),
+        w('site.applications', 'طلبات التقديم', 'Applications'), w('site.bans', 'حظر الموقع', 'Site bans'),
+        w('site.store', 'المتجر', 'Store'), w('site.shop', 'المحل', 'Shop'), w('site.login', 'تسجيل الدخول', 'Login settings'),
+    } },
+}
+
+RanksWebNodes = {}
+for _, group in ipairs(WEB_GROUPS) do
+    group.web = true
+    for _, item in ipairs(group.nodes) do
+        item.web = true
+        RanksWebNodes[item.node] = true
+    end
+    RanksCatalog[#RanksCatalog + 1] = group
+end

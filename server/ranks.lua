@@ -20,8 +20,12 @@
 -- (falls back to w_connector_owners) and are applied on every boot BEFORE the database is read, so the
 -- owner can never lock himself out from the panel, nor lose his rights when the database is down.
 --
+-- ONE system with the website (wraith7.com): w_connector reads and writes these same ranks (a rank's
+-- website permissions sit beside its in-game ones, catalogue groups web_*), and the site's 'owner' is
+-- the master. A rank tied to a Discord role (discord_role_id) is the site's rank for whoever holds it.
+--
 -- Exports (every change is checked again here: the actor must be a master or the server console):
---   RanksState()                              -> { ranks, members, catalog }
+--   RanksState()                              -> { ranks, members, catalog }   ranks carry discord (a Discord role id or '')
 --   RanksIsMaster(src)                        -> boolean
 --   RanksOfPlayer(src)                        -> { rankName, ... }
 --   RanksSave(actor, data)                    -> true | false, errKey
@@ -118,6 +122,9 @@ local function applyRank(name)
             -- the master's list is computed here, not typed: only the console-safe characters are asked of it
             local okNode
             if name == MASTER then okNode = safeNode(node) else okNode = validNode(node) end
+            -- the website's permissions (ranks_catalog.lua, web = true) are checked by w_connector by
+            -- name, never by ACE: no add_ace for them
+            if okNode and RanksWebNodes and RanksWebNodes[node:lower()] then okNode = false end
             if okNode then
                 node = node:lower()
                 if node:sub(1, 6) == 'group.' then new.parents[node] = true else new.aces[node] = true end
@@ -198,6 +205,10 @@ local function load()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
     ]])
 
+    -- the Discord role a rank is tied to: who holds that role on the Discord server holds the rank on the
+    -- website (w_connector hands the list to the site, which matches the member's roles against it)
+    MySQL.query.await('ALTER TABLE w_ranks ADD COLUMN IF NOT EXISTS discord_role_id VARCHAR(32) NULL')
+
     -- the master rank always exists
     MySQL.query.await([[
         INSERT IGNORE INTO w_ranks (name, label, color, sort, permissions, protected, updated_by)
@@ -219,6 +230,7 @@ local function load()
                 name = row.name, label = tostring(row.label or row.name), color = tostring(row.color or '#c8a24a'),
                 sort = tonumber(row.sort) or 0, permissions = decodePerms(row.permissions),
                 protected = row.protected == 1 or row.protected == true or row.name == MASTER,
+                discord = (row.name ~= MASTER and type(row.discord_role_id) == 'string' and row.discord_role_id:match('^%d+$')) or nil,
             }
         end
     end
@@ -291,7 +303,7 @@ local function state()
         for _, m in pairs(Members) do if m.ranks[r.name] then count = count + 1 end end
         ranks[#ranks + 1] = {
             name = r.name, label = r.label, color = r.color, sort = r.sort, protected = r.protected,
-            permissions = r.name == MASTER and { '*' } or r.permissions, members = count,
+            permissions = r.name == MASTER and { '*' } or r.permissions, members = count, discord = r.discord or '',
         }
     end
     table.sort(ranks, function(a, b) if a.sort ~= b.sort then return a.sort > b.sort end return a.name < b.name end)
@@ -347,15 +359,24 @@ local function save(actor, data)
     end
     table.sort(perms)
 
+    -- the Discord role: nil keeps the one the rank has (the in-game page does not send it), '' clears it
+    local discord = Ranks[name] and Ranks[name].discord or nil
+    if data.discord_role_id ~= nil then
+        local d = tostring(data.discord_role_id):gsub('%s', '')
+        if d == '' then discord = nil
+        elseif d:match('^%d+$') and #d <= 32 then discord = d
+        else return false, 'err_rank_discord' end
+    end
+
     local ok = pcall(MySQL.query.await, [[
-        INSERT INTO w_ranks (name, label, color, sort, permissions, protected, updated_by) VALUES (?, ?, ?, ?, ?, 0, ?)
+        INSERT INTO w_ranks (name, label, color, sort, permissions, protected, updated_by, discord_role_id) VALUES (?, ?, ?, ?, ?, 0, ?, ?)
         ON DUPLICATE KEY UPDATE label = VALUES(label), color = VALUES(color), sort = VALUES(sort),
-            permissions = VALUES(permissions), updated_by = VALUES(updated_by)
-    ]], { name, label, color, sort, json.encode(perms), actorName(actor) })
+            permissions = VALUES(permissions), updated_by = VALUES(updated_by), discord_role_id = VALUES(discord_role_id)
+    ]], { name, label, color, sort, json.encode(perms), actorName(actor), discord })
     if not ok then return false, 'err_db' end
 
     local isNew = Ranks[name] == nil
-    Ranks[name] = { name = name, label = label, color = color, sort = sort, permissions = perms, protected = false }
+    Ranks[name] = { name = name, label = label, color = color, sort = sort, permissions = perms, protected = false, discord = discord }
     applyRank(name)
     say('info', '%s %s rank %s (%d permission(s))', actorName(actor), isNew and 'created' or 'edited', name, #perms)
     TriggerEvent('w_core:ranks:changed', 'save', name)
