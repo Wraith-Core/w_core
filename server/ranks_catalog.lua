@@ -258,6 +258,10 @@ local WEB_GROUPS = {
         w('server.timescale.control', 'سرعة الوقت', 'Time scale'), w('server.wind.control', 'الرياح', 'Wind'),
         w('server.syncdelay.control', 'تأخير المزامنة', 'Sync delay'),
     } },
+    { id = 'web_queue', label = { ar = 'الموقع: الدخول والطابور', en = 'Website: entry and queue' }, nodes = {
+        w('queue.view', 'مشاهدة الطابور والأولويات', 'View the queue and priorities'),
+        w('queue.manage', 'إدارة الدخول (الطابور، الأولوية، القفل، القائمة البيضاء)', 'Manage entry (queue, priority, closing, whitelist)'),
+    } },
     { id = 'web_site', label = { ar = 'الموقع: صفحات الموقع', en = 'Website: site pages' }, nodes = {
         w('site.manage', 'إدارة الموقع', 'Manage the site'), w('site.rules', 'القوانين', 'Rules'),
         w('site.applications', 'طلبات التقديم', 'Applications'), w('site.bans', 'حظر الموقع', 'Site bans'),
