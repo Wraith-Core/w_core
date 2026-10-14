@@ -55,6 +55,8 @@ server_scripts {
     'server/events.lua',
     'server/commands.lua',
     'server/exports.lua',
+    'server/ranks_catalog.lua', -- every permission a rank can hold (the ranks page draws it)
+    'server/ranks.lua',         -- staff ranks in the database, applied as ACE (only a master manages them)
     'server/loops.lua',
     'server/debug.lua',
     'compat/rsg_shared.lua',

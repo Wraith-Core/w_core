@@ -23,13 +23,17 @@
         "no_waypoint": "No Waypoint Set.",
         "tp_error": "Error While Teleporting.",
         "no_skill": "That skill does not exist",
-        "banned": "You have been banned from the server:\n%{reason}\nYour ban expires %{date}\n"
+        "banned": "You have been banned from the server:\n%{reason}\nYour ban expires %{date}\n",
+        "ranks_master_only": "Ranks are for the master only",
+        "rank_failed": "Rank %{rank} not changed: %{reason}"
     },
     "success": {
         "server_opened": "The server has been opened",
         "server_closed": "The server has been closed",
         "teleported_waypoint": "Teleported To Waypoint.",
-        "offline_saved": "Done for %{name}, who is offline: it applies when he joins"
+        "offline_saved": "Done for %{name}, who is offline: it applies when he joins",
+        "rank_given": "Gave rank %{rank} to %{name}",
+        "rank_taken": "Took rank %{rank} from %{name}"
     },
     "info": {
         "received_paycheck": "You received your paycheck of $%{value}",
@@ -86,28 +90,28 @@
             "help": "TP To Marker (Admin Only)"
         },
         "addpermission": {
-            "help": "Give Player Permissions (God Only)",
+            "help": "Give a player a rank (master only) — saved, kept across logins",
             "params": {
                 "id": {
                     "name": "citizenid",
                     "help": "The player's citizen ID, online only (# before a server ID, e.g. #5)"
                 },
                 "permission": {
-                    "name": "permission",
-                    "help": "Permission level"
+                    "name": "rank",
+                    "help": "The rank name as on the ranks page (e.g. master)"
                 }
             }
         },
         "removepermission": {
-            "help": "Remove Player Permissions (God Only)",
+            "help": "Take a rank from a player (master only)",
             "params": {
                 "id": {
                     "name": "citizenid",
                     "help": "The player's citizen ID, online only (# before a server ID, e.g. #5)"
                 },
                 "permission": {
-                    "name": "permission",
-                    "help": "Permission level"
+                    "name": "rank",
+                    "help": "The rank name to take"
                 }
             }
         },

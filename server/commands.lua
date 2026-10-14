@@ -199,19 +199,34 @@ end, 'admin')
 
 -- Permissions
 
--- a permission is a runtime ACE on the live connection (not saved): the player must be in play
-WCore.Commands.Add('addpermission', Lang:t('command.addpermission.help'), params('addpermission', { 'id', 'permission' }), true, function(source, args)
+-- ★ A rank of the database now (server/ranks.lua), kept on the player's license across reconnects and
+--   restarts -- it used to be a runtime ACE on the connection, gone at the next login. The master only:
+--   the command ACE is held by every group.admin, so the handler asks for the master itself.
+local function rankCommand(source, args, give)
+    if not WCore.Ranks.isMaster(source) then return notify(source, 'error.ranks_master_only', nil, 'error') end
     local target = commandTarget(source, args[1], true)
     if not target then return end
-    local permission = tostring(args[2]):lower()
-    WCore.Functions.AddPermission(target.source, permission)
+    local rank = tostring(args[2] or ''):lower()
+    local ok, err
+    if give then
+        ok, err = WCore.Ranks.assign(source, { source = target.source }, rank)
+    else
+        -- whichever identifier holds it (a convar master is kept by steam:, a panel rank by license:)
+        ok, err = WCore.Ranks.revokePlayer(source, target.source, rank)
+    end
+    if ok then
+        notify(source, give and 'success.rank_given' or 'success.rank_taken', { rank = rank, name = GetPlayerName(target.source) or '?' }, 'success')
+    else
+        notify(source, 'error.rank_failed', { rank = rank, reason = tostring(err) }, 'error')
+    end
+end
+
+WCore.Commands.Add('addpermission', Lang:t('command.addpermission.help'), params('addpermission', { 'id', 'permission' }), true, function(source, args)
+    rankCommand(source, args, true)
 end, 'god')
 
 WCore.Commands.Add('removepermission', Lang:t('command.removepermission.help'), params('removepermission', { 'id', 'permission' }), true, function(source, args)
-    local target = commandTarget(source, args[1], true)
-    if not target then return end
-    local permission = tostring(args[2]):lower()
-    WCore.Functions.RemovePermission(target.source, permission)
+    rankCommand(source, args, false)
 end, 'god')
 
 -- Open & Close Server
