@@ -214,12 +214,27 @@ function WCore.Functions.TriggerClientCallback(name, source, cb, ...)
 end
 
 -- Server Callback (answers the clients)
+-- ★ 2026-10-15: the handler registered with w_lib reads WCore.ServerCallbacks[name] on every call, so
+--   a resource that restarts (w_medic) only needs its function swapped. Registering the name again
+--   made w_lib print "Callback already registered" for each of its callbacks on every restart. The
+--   name is registered once; it is registered again only after w_lib dropped it, which w_lib does
+--   when the resource it recorded for the name (GetInvokingResource() at registration -- the same
+--   value here, w_lib's register runs in this call) stops: that rule is mirrored below.
+local callbackOwner = {}   -- [name] = what w_lib recorded as the registering resource (false = none)
 function WCore.Functions.CreateCallback(name, cb)
     WCore.ServerCallbacks[name] = cb
+    if callbackOwner[name] ~= nil then return end
+    callbackOwner[name] = GetInvokingResource() or false
     w.callback.register(name, function(source, ...)
         return awaitHandler(WCore.ServerCallbacks[name], source, ...)
     end)
 end
+
+AddEventHandler('onResourceStop', function(resource)
+    for name, owner in pairs(callbackOwner) do
+        if owner == resource and name:match('^[^:]*') ~= 'w_lib' then callbackOwner[name] = nil end
+    end
+end)
 
 -- Runs a server callback locally (same VM), the way the old net adapter did
 function WCore.Functions.TriggerCallback(name, source, cb, ...)

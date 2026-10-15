@@ -139,6 +139,27 @@ RanksCatalog = {
         },
     },
     {
+        -- w_farming's board (/farmadmin). ⚠️ 'w_farming.admin' is the parent: it holds every node below.
+        id = 'farming', label = { ar = 'الزراعة', en = 'Farming' },
+        nodes = {
+            n('w_farming.admin', 'الزراعة: كاملة', 'Farming: full',
+                'كل صلاحيات لوحة الزراعة (/farmadmin). يشمل كل اللي تحت.',
+                'Every farming board power (/farmadmin). Includes everything below.', true),
+            n('w_farming.admin.view', 'الزراعة: مشاهدة', 'Farming: view',
+                'يفتح لوحة الزراعة للمشاهدة فقط.', 'Opens the farming board, read only.'),
+            n('w_farming.admin.fields', 'الزراعة: الأراضي والنقاط', 'Farming: fields and points',
+                'يرسم الأراضي ويعدّلها، ويحط الورش والتجار ونقاط الماء.',
+                'Draws and edits fields, places workshops, buyers and water points.'),
+            n('w_farming.admin.economy', 'الزراعة: الأسعار', 'Farming: prices',
+                'يغيّر أسعار المحاصيل وميزانيتها اليومية.', 'Changes crop prices and their daily budgets.', true),
+            n('w_farming.admin.compensate', 'الزراعة: الطرد والتعويض', 'Farming: evictions and refunds',
+                'يطرد المستأجرين مع أو بدون إرجاع الفلوس، ويحل العمليات المعلّقة.',
+                'Evicts tenants with or without a refund, and settles held operations.', true),
+            n('w_farming.admin.cleanup', 'الزراعة: التنظيف', 'Farming: cleanup',
+                'يمسح السجلات والعمليات القديمة حسب مدة الحفظ.', 'Clears old records and operations past their retention.'),
+        },
+    },
+    {
         id = 'map', label = { ar = 'الخريطة', en = 'Map' },
         nodes = {
             n('w_map.editor', 'محرر الخريطة', 'Map editor', 'يعدّل العلامات والأسماء على الخريطة.', 'Edits the blips and labels on the map.'),
@@ -186,7 +207,7 @@ end
 RanksMasterRoots = {
     'command', 'god', 'admin', 'mod', 'wraithadmin', 'w_stables', 'w_pets', 'w_store', 'w_butcher', 'w_level',
     'w_jobs', 'w_missions', 'w_map', 'w_doorlock', 'wraith_cinema', 'w_baloot', 'w_logs', 'w_hud', 'w_pausemenu',
-    'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib',
+    'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib', 'w_farming',
 }
 
 -- ════════════════════════════════════════════════════════════════════════════

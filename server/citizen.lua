@@ -316,6 +316,18 @@ local EXACT = {
     -- w_lib w.settings (the live settings w_admin edits): who changed a value, who is in the audit, who saved a preset
     { 'w_admin_settings', 'updated_by', 'history' }, { 'w_admin_settings_audit', 'actor_cid', 'history' },
     { 'w_admin_settings_presets', 'created_by', 'history' },
+    -- w_farming (its PurgeCharacter ends the live leases, cancels the running jobs and releases the
+    -- private fields / owner-only workshops it owned; the rest is history). A live lease is an asset:
+    -- w_farming_plants.lease_id has a foreign key to it, never a raw delete.
+    { 'w_farming_leases', 'cid', 'asset', "`status` IN ('reserved','active','refunding')", res = 'w_farming' },
+    { 'w_farming_jobs', 'cid', 'data', "`status` IN ('starting','running','ready','claiming')" },
+    { 'w_farming_xp', 'cid', 'data' },
+    { 'w_farming_ops', 'cid', 'history' },
+    { 'w_farming_rewards', 'officer_cid', 'history' },
+    { 'w_farming_stations', 'owner_cid', 'asset', res = 'w_farming' },
+    { 'w_farming_fields', 'owner_id', 'asset', where = "`owner_kind` = 'character'", res = 'w_farming' },
+    { 'w_farming_fields', 'created_by', 'history' }, { 'w_farming_fields', 'updated_by', 'history' },
+    { 'w_farming_audit', 'actor', 'history' },
 }
 -- SHAPED: the id inside a known shape. Lua patterns; %s is the (escaped) id. Anchored shapes only:
 -- a numeric id is never replaced where it merely appears ("7" is also an amount or a store). The
@@ -425,6 +437,8 @@ local SHAPED = {
     -- joined by ', ' ('12, 7, ABC12345'). Each entry is anchored by the list's start, its end or
     -- the separator, so '12' never matches inside '112' or a word of the report's text.
     { 'mdt_reports', 'involved_ids', { '^%s$', '^%s,', ', %s,', ', %s$' }, 'history' },
+    -- w_farming: a lease's helpers, a JSON list of { "cid": "<id>", "name": ... }
+    { 'w_farming_leases', 'helpers', { '"cid":"%s"' }, 'history' },
 }
 C.REGISTRY = { exact = EXACT, shaped = SHAPED }
 
@@ -1126,7 +1140,7 @@ end
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
                       'w_baloot', 'w_legal', 'w_butcher', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector',
-                      'w_jobs', 'w_centralbank' }
+                      'w_jobs', 'w_farming', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
