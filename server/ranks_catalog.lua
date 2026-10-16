@@ -160,6 +160,25 @@ RanksCatalog = {
         },
     },
     {
+        -- w_livestock's board (/livestockadmin). ⚠️ 'w_livestock.admin' is the parent: it holds every node below.
+        id = 'livestock', label = { ar = 'المواشي', en = 'Livestock' },
+        nodes = {
+            n('w_livestock.admin', 'المواشي: كاملة', 'Livestock: full',
+                'كل صلاحيات لوحة المواشي (/livestockadmin). يشمل كل اللي تحت.',
+                'Every livestock board power (/livestockadmin). Includes everything below.', true),
+            n('w_livestock.admin.view', 'المواشي: مشاهدة', 'Livestock: view',
+                'يفتح لوحة المواشي للمشاهدة فقط.', 'Opens the livestock board, read only.'),
+            n('w_livestock.admin.barns', 'المواشي: الحظائر', 'Livestock: barns',
+                'يرسم الحظائر ويعدّلها ويطرد ملاكها.', 'Draws and edits barns, evicts their owners.', true),
+            n('w_livestock.admin.dealers', 'المواشي: التجار', 'Livestock: dealers',
+                'يحط تجار المواشي ويعدّلهم.', 'Places and edits the livestock dealers.'),
+            n('w_livestock.admin.animals', 'المواشي: السجل', 'Livestock: registry',
+                'يعالج ويحذف ويعطي حيوانات.', 'Heals, removes and gives animals.', true),
+            n('w_livestock.admin.settings', 'المواشي: الأسعار والأوقات', 'Livestock: prices and times',
+                'يغيّر الأسعار والأوقات ويحل الدفعات المعلقة.', 'Changes prices and times, settles held payments.', true),
+        },
+    },
+    {
         id = 'map', label = { ar = 'الخريطة', en = 'Map' },
         nodes = {
             n('w_map.editor', 'محرر الخريطة', 'Map editor', 'يعدّل العلامات والأسماء على الخريطة.', 'Edits the blips and labels on the map.'),
@@ -208,6 +227,7 @@ RanksMasterRoots = {
     'command', 'god', 'admin', 'mod', 'wraithadmin', 'w_stables', 'w_pets', 'w_store', 'w_butcher', 'w_level',
     'w_jobs', 'w_missions', 'w_map', 'w_doorlock', 'wraith_cinema', 'w_baloot', 'w_logs', 'w_hud', 'w_pausemenu',
     'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib', 'w_farming',
+    'w_livestock',
 }
 
 -- ════════════════════════════════════════════════════════════════════════════

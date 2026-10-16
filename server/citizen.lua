@@ -328,6 +328,12 @@ local EXACT = {
     { 'w_farming_fields', 'owner_id', 'asset', where = "`owner_kind` = 'character'", res = 'w_farming' },
     { 'w_farming_fields', 'created_by', 'history' }, { 'w_farming_fields', 'updated_by', 'history' },
     { 'w_farming_audit', 'actor', 'history' },
+    -- w_livestock (its PurgeCharacter removes the live animals and gives the barns back to nobody)
+    { 'w_livestock_animals', 'cid', 'asset', "`status` IN ('alive','dead')", res = 'w_livestock' },
+    { 'w_livestock_barns', 'owner_cid', 'asset', res = 'w_livestock' },
+    { 'w_livestock_barns', 'created_by', 'history' }, { 'w_livestock_barns', 'updated_by', 'history' },
+    { 'w_livestock_dealers', 'updated_by', 'history' },
+    { 'w_livestock_payments', 'cid', 'history' },
 }
 -- SHAPED: the id inside a known shape. Lua patterns; %s is the (escaped) id. Anchored shapes only:
 -- a numeric id is never replaced where it merely appears ("7" is also an amount or a store). The
@@ -1140,7 +1146,7 @@ end
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
                       'w_baloot', 'w_legal', 'w_butcher', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector',
-                      'w_jobs', 'w_farming', 'w_centralbank' }
+                      'w_jobs', 'w_farming', 'w_livestock', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
