@@ -334,6 +334,9 @@ local EXACT = {
     { 'w_livestock_barns', 'created_by', 'history' }, { 'w_livestock_barns', 'updated_by', 'history' },
     { 'w_livestock_dealers', 'updated_by', 'history' },
     { 'w_livestock_payments', 'cid', 'history' },
+    -- w_heists (the robberies are the server's, nothing a character owns: payouts and runs are history)
+    { 'w_heists', 'created_by', 'history' }, { 'w_heists', 'updated_by', 'history' },
+    { 'w_heists_payouts', 'cid', 'history' },
 }
 -- SHAPED: the id inside a known shape. Lua patterns; %s is the (escaped) id. Anchored shapes only:
 -- a numeric id is never replaced where it merely appears ("7" is also an amount or a store). The
@@ -445,6 +448,8 @@ local SHAPED = {
     { 'mdt_reports', 'involved_ids', { '^%s$', '^%s,', ', %s,', ', %s$' }, 'history' },
     -- w_farming: a lease's helpers, a JSON list of { "cid": "<id>", "name": ... }
     { 'w_farming_leases', 'helpers', { '"cid":"%s"' }, 'history' },
+    -- w_heists: a run's crew, a JSON list of { "cid": "<id>", "name": ... }
+    { 'w_heists_runs', 'crew', { '"cid":"%s"' }, 'history' },
 }
 C.REGISTRY = { exact = EXACT, shaped = SHAPED }
 

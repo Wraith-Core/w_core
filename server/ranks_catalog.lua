@@ -179,6 +179,15 @@ RanksCatalog = {
         },
     },
     {
+        -- w_heists' board (/heistadmin): one node builds, tests and stops every robbery.
+        id = 'heists', label = { ar = 'السرقات', en = 'Heists' },
+        nodes = {
+            n('w_heists.admin', 'السرقات: كاملة', 'Heists: full',
+                'يبني السرقات ويجربها ويوقفها (/heistadmin).',
+                'Builds, tests and stops robberies (/heistadmin).', true),
+        },
+    },
+    {
         id = 'map', label = { ar = 'الخريطة', en = 'Map' },
         nodes = {
             n('w_map.editor', 'محرر الخريطة', 'Map editor', 'يعدّل العلامات والأسماء على الخريطة.', 'Edits the blips and labels on the map.'),
@@ -227,7 +236,7 @@ RanksMasterRoots = {
     'command', 'god', 'admin', 'mod', 'wraithadmin', 'w_stables', 'w_pets', 'w_store', 'w_butcher', 'w_level',
     'w_jobs', 'w_missions', 'w_map', 'w_doorlock', 'wraith_cinema', 'w_baloot', 'w_logs', 'w_hud', 'w_pausemenu',
     'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib', 'w_farming',
-    'w_livestock',
+    'w_livestock', 'w_heists',
 }
 
 -- ════════════════════════════════════════════════════════════════════════════
