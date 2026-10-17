@@ -89,7 +89,7 @@ WJobs = {
 		grades = {
             [0] = { name = 'Trainee Doctor', name_ar = "طبيب متدرب", payment = 10 },
             [1] = { name = 'Experienced Doctor', name_ar = "طبيب متمرس", payment = 25 },
-            [2] = { name = 'Distinguished Doctor', name_ar = "طبيب إمتياز", payment = 35 },
+            [2] = { name = 'Distinguished Doctor', name_ar = "طبيب امتياز", payment = 35 },
             [3] = { name = 'Doctor', name_ar = "دكتور", payment = 50 },
             [4] = { name = 'Deputy Minister of Health', name_ar = "نائب وزير الصحة", isboss = true, payment = 100 },
             [5] = { name = 'Minister of Health', name_ar = "وزير الصحة", isboss = true, payment = 100 },
@@ -103,7 +103,7 @@ WJobs = {
 		grades = {
             [0] = {
                 name = 'Judge',
-                name_ar = "قاضي",
+                name_ar = "قاضٍ",
                 payment = 100
             },
         },
@@ -116,7 +116,7 @@ WJobs = {
 		grades = {
             [0] = {
                 name = 'Associate',
-                name_ar = "محامي",
+                name_ar = "محامٍ",
                 payment = 50
             },
         },
