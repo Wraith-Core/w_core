@@ -188,6 +188,16 @@ RanksCatalog = {
         },
     },
     {
+        -- w_kingdoms' board (/kingdomadmin): kingdoms, their lands (districts and drawn lands), capitals, kings and
+        -- offices. Drawing a land's shape is the map editor's own node (w_map.editor).
+        id = 'kingdoms', label = { ar = 'الممالك', en = 'Kingdoms' },
+        nodes = {
+            n('w_kingdoms.admin', 'الممالك: كاملة', 'Kingdoms: full',
+                'ينشئ الممالك ويوزع الأراضي ويحدد العواصم ويعيّن الملوك والمناصب (/kingdomadmin).',
+                'Creates kingdoms, hands out lands, sets capitals, seats kings and offices (/kingdomadmin).', true),
+        },
+    },
+    {
         id = 'map', label = { ar = 'الخريطة', en = 'Map' },
         nodes = {
             n('w_map.editor', 'محرر الخريطة', 'Map editor', 'يعدّل العلامات والأسماء على الخريطة.', 'Edits the blips and labels on the map.'),
@@ -236,7 +246,7 @@ RanksMasterRoots = {
     'command', 'god', 'admin', 'mod', 'wraithadmin', 'w_stables', 'w_pets', 'w_store', 'w_butcher', 'w_level',
     'w_jobs', 'w_missions', 'w_map', 'w_doorlock', 'wraith_cinema', 'w_baloot', 'w_logs', 'w_hud', 'w_pausemenu',
     'w_creators', 'w_guarma', 'w_crafting', 'w_tribes', 'w_inventory', 'w_admin', 'w_core', 'w_lib', 'w_farming',
-    'w_livestock', 'w_heists',
+    'w_livestock', 'w_heists', 'w_kingdoms',
 }
 
 -- ════════════════════════════════════════════════════════════════════════════

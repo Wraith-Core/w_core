@@ -310,6 +310,12 @@ local EXACT = {
     -- w_kingdom_v2 deposes a king by storing '' (Store.SeatKing)
     { 'wk2_kingdoms', 'king_charid', 'asset', release = "`king_charid` = '', `king_name` = ''", owner = 'w_kingdom_v2' },
     { 'wk2_places', 'updated_by', 'history' },
+    -- w_kingdoms (its PurgeCharacter deletes the character's office: a king's throne falls vacant; the rest is history).
+    -- w_kingdoms_lands.updated_by and w_kingdoms.created_by may hold a staff member's citizen id or a name: history.
+    { 'w_kingdoms_offices', 'cid', 'data' }, { 'w_kingdoms_offices', 'appointed_by', 'history' },
+    { 'w_kingdoms_allegiance', 'by_cid', 'history' },
+    { 'w_kingdoms_log', 'actor_cid', 'history' }, { 'w_kingdoms_log', 'target_cid', 'history' },
+    { 'w_kingdoms_lands', 'updated_by', 'history' }, { 'w_kingdoms', 'created_by', 'history' },
     { 'w_core_character_blocks', 'citizenid', 'data' },
     -- w_admin: the admin log (the staff member who acted, and the character it was done to)
     { 'w_admin_log', 'admin_cid', 'history' }, { 'w_admin_log', 'target_cid', 'history' },
@@ -1151,7 +1157,7 @@ end
 -- the export is skipped with a warning.
 local PURGE_ORDER = { 'w_store', 'w_housing', 'w_stables', 'w_pets', 'w_marketplace', 'w_tribes', 'w_crafting', 'w_citizens',
                       'w_baloot', 'w_legal', 'w_butcher', 'w_mdt', 'w_hud', 'w_banking', 'w_creators', 'w_inventory', 'w_connector',
-                      'w_jobs', 'w_farming', 'w_livestock', 'w_centralbank' }
+                      'w_jobs', 'w_farming', 'w_livestock', 'w_kingdoms', 'w_centralbank' }
 C.PURGE_ORDER = PURGE_ORDER
 
 --- The money cannot be returned without the ledger: asked before anyone is kicked.
