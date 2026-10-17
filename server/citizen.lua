@@ -316,6 +316,10 @@ local EXACT = {
     { 'w_kingdoms_allegiance', 'by_cid', 'history' },
     { 'w_kingdoms_log', 'actor_cid', 'history' }, { 'w_kingdoms_log', 'target_cid', 'history' },
     { 'w_kingdoms_lands', 'updated_by', 'history' }, { 'w_kingdoms', 'created_by', 'history' },
+    -- w_kingdoms 1.1.0, the wars: who declared, who fought, who died on a front (its 3-hour ban is a row here: under
+    -- the tombstone it bans nobody, and a reassign carries it to the new number)
+    { 'w_kingdoms_wars', 'declared_by', 'history' }, { 'w_kingdoms_war_people', 'cid', 'history' },
+    { 'w_kingdoms_war_deaths', 'cid', 'history' },
     { 'w_core_character_blocks', 'citizenid', 'data' },
     -- w_admin: the admin log (the staff member who acted, and the character it was done to)
     { 'w_admin_log', 'admin_cid', 'history' }, { 'w_admin_log', 'target_cid', 'history' },
