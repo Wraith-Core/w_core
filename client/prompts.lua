@@ -8,7 +8,7 @@
 local Prompts = {}
 local PromptGroups = {}
 local RANGE <const> = 1.5
-local FALLBACK_KEY <const> = 'E'
+local FALLBACK_KEY <const> = 'J' -- not E: E on foot grabs the player beside you
 
 -- ── keys ─────────────────────────────────────────────────────────────────────────────
 -- Callers pass the RedM control hash (WKeybinds / WCore.Shared.GetKey) or a key name; the
@@ -35,7 +35,7 @@ for name, hash in pairs(WKeybinds) do
 end
 
 -- A name the library's key listener does not know (MWUP, HorseCommandFlee...) would never
--- complete: it falls back to E with a warning.
+-- complete: it falls back to J with a warning.
 ---@param name string
 ---@param original string|number
 ---@return string
