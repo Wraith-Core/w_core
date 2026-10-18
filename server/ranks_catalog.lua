@@ -198,6 +198,25 @@ RanksCatalog = {
         },
     },
     {
+        -- w_guard's panel (/guard): the four panel roles (server/staff.lua aceRole). Exemptions are granted per person
+        -- inside the guard, never here.
+        id = 'guard', label = { ar = 'الحارس (الحماية)', en = 'Guard (anti-cheat)' },
+        nodes = {
+            n('w_guard.viewer', 'الحارس: مراقب', 'Guard: viewer',
+                'يفتح لوحة الحارس /guard ويرى اللاعبين والحالات والحظر بدون أي إجراء.',
+                'Opens the /guard panel and sees players, cases and bans, with no actions.'),
+            n('w_guard.moderator', 'الحارس: مشرف', 'Guard: moderator',
+                'المراقب + يراجع الحالات ويطرد اللاعبين، وتصله تنبيهات الحارس داخل اللعبة.',
+                'Viewer + reviews cases and kicks players, and gets the guard alerts in game.'),
+            n('w_guard.manager', 'الحارس: مدير', 'Guard: manager',
+                'المشرف + يحظر ويرفع الحظر ويغيّر إجراء كل كشف.',
+                'Moderator + bans and lifts bans, and changes each detection\'s action.', true),
+            n('w_guard.owner', 'الحارس: المالك', 'Guard: owner',
+                'كل شيء في الحارس: الاستثناءات وتفعيل الحظر التلقائي.',
+                'Everything in the guard: exemptions and switching automatic bans on.', true),
+        },
+    },
+    {
         id = 'map', label = { ar = 'الخريطة', en = 'Map' },
         nodes = {
             n('w_map.editor', 'محرر الخريطة', 'Map editor', 'يعدّل العلامات والأسماء على الخريطة.', 'Edits the blips and labels on the map.'),
