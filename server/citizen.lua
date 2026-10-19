@@ -338,9 +338,10 @@ local EXACT = {
     { 'w_farming_fields', 'owner_id', 'asset', where = "`owner_kind` = 'character'", res = 'w_farming' },
     { 'w_farming_fields', 'created_by', 'history' }, { 'w_farming_fields', 'updated_by', 'history' },
     { 'w_farming_audit', 'actor', 'history' },
-    -- w_livestock (its PurgeCharacter removes the live animals and gives the barns back to nobody)
-    { 'w_livestock_animals', 'cid', 'asset', "`status` IN ('alive','dead')", res = 'w_livestock' },
-    { 'w_livestock_barns', 'owner_cid', 'asset', res = 'w_livestock' },
+    -- w_livestock (inside w_farming since its 1.5.0: w_farming's PurgeCharacter removes the live animals and gives the
+    -- barns back to nobody)
+    { 'w_livestock_animals', 'cid', 'asset', "`status` IN ('alive','dead')", res = 'w_farming' },
+    { 'w_livestock_barns', 'owner_cid', 'asset', res = 'w_farming' },
     { 'w_livestock_barns', 'created_by', 'history' }, { 'w_livestock_barns', 'updated_by', 'history' },
     { 'w_livestock_dealers', 'updated_by', 'history' },
     { 'w_livestock_payments', 'cid', 'history' },
