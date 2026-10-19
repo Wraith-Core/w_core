@@ -131,3 +131,17 @@ WJobs.gunsmith = WJobs.gunsmith or {
         [1] = {name = 'Master Gunsmith', name_ar = 'كبير الحدّادين', payment = 0, isboss = true},
     },
 }
+
+-- The central bank (w_centralbank 2.0, 2026-10-19): the grade decides who sees the figures, handles central loans,
+-- manages the staff and prints money; the president (4) is set by an admin (set job) or `central_governor`.
+-- Salaries like the doctors', paid from the central reserve while on duty.
+WJobs.centralbank = WJobs.centralbank or {
+    label = 'Central Bank', label_ar = 'البنك المركزي', defaultDuty = true, offDutyPay = false,
+    grades = {
+        [0] = {name = 'Cashier', name_ar = 'موظف خزنة', payment = 10},
+        [1] = {name = 'Auditor', name_ar = 'مراجع', payment = 25},
+        [2] = {name = 'Credit Officer', name_ar = 'مسؤول ائتمان', payment = 50},
+        [3] = {name = 'Vice President', name_ar = 'نائب الرئيس', payment = 100, isboss = true},
+        [4] = {name = 'President', name_ar = 'رئيس البنك المركزي', payment = 100, isboss = true},
+    },
+}
