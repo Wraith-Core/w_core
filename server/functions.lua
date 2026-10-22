@@ -380,20 +380,10 @@ end
 -- Check if player is banned
 
 function WCore.Functions.IsPlayerBanned(source)
-    local plicense = WCore.Functions.GetIdentifier(source, 'license')
-    if not plicense then return false end
-    -- the ban that ends last: with an expired row and a live one for the same license, the first row
-    -- found could be the expired one, which was deleted and the live ban then never read
-    local result = MySQL.single.await('SELECT * FROM bans WHERE license = ? ORDER BY expire DESC LIMIT 1', { plicense })
-    if not result then return false end
-    if os.time() < result.expire then
-        local timeTable = os.date('*t', tonumber(result.expire))
-        local date = ('%s/%s/%s %s:%02d'):format(timeTable.day, timeTable.month, timeTable.year, timeTable.hour, timeTable.min)
-        return true, Lang:t('error.banned', { reason = result.reason, date = date })
-    else
-        MySQL.query('DELETE FROM bans WHERE id = ?', { result.id })
-    end
-    return false
+    -- the one ban store (server/bans.lua): license, Discord or Steam, whichever side banned him
+    local ban = WBans.check(WBans.idsOf(source))
+    if not ban then return false end
+    return true, WBans.message(ban.reason, ban.expire)
 end
 
 -- Check for duplicate license

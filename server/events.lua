@@ -30,7 +30,9 @@ local function onPlayerConnecting(name, _, deferrals)
     if not valid then return deferrals.done(reason) end
     local license = identifiers.license
 
-    if WCore.Config.Server.Closed then
+    -- with w_connector running ITS switch is the one (the website, w_admin and /closeserver set it) and its
+    -- queue is the gate that applies it; this flag is only the fallback without it (2026-10-22)
+    if WCore.Config.Server.Closed and GetResourceState('w_connector') ~= 'started' then
         if not IsPlayerAceAllowed(src, 'wraithadmin.join') then
             return deferrals.done(Lang:t(WCore.Config.Server.ClosedReason))
         end
@@ -82,7 +84,7 @@ RegisterNetEvent('WCore:Server:CloseServer', function(reason)
     local src = source
     if WCore.Functions.HasPermission(src, 'admin') then
         reason = reason or 'info.no_reason'
-        WCore.Config.Server.Closed = true
+        WCore.Functions.SetServerClosed(true, GetPlayerName(src))
         WCore.Config.Server.ClosedReason = reason
         for k in pairs(WCore.Players) do
             if not WCore.Functions.HasPermission(k, WCore.Config.Server.WhitelistPermission) then
@@ -97,7 +99,7 @@ end)
 RegisterNetEvent('WCore:Server:OpenServer', function()
     local src = source
     if WCore.Functions.HasPermission(src, 'admin') then
-        WCore.Config.Server.Closed = false
+        WCore.Functions.SetServerClosed(false, GetPlayerName(src))
     else
         WCore.Functions.Kick(src, 'error.no_permission', nil, nil)
     end

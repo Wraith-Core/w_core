@@ -319,16 +319,10 @@ exports('GetCoreVersion', GetCoreVersion)
 
 local function ExploitBan(playerId, origin)
     local name = GetPlayerName(playerId)
-    MySQL.insert('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-        name,
-        WCore.Functions.GetIdentifier(playerId, 'license'),
-        WCore.Functions.GetIdentifier(playerId, 'discord'),
-        WCore.Functions.GetIdentifier(playerId, 'ip'),
-        origin,
-        2147483647,
-        'Anti Cheat'
-    })
-    DropPlayer(playerId, Lang:t('info.exploit_banned', {discord = WCore.Config.Server.Discord}))
+    local ids = WBans.idsOf(playerId)
+    WBans.add({ license = ids.license, discord = ids.discord, steam = ids.steam, ip = ids.ip, name = name,
+        reason = origin, minutes = 0, bannedBy = 'Anti Cheat',
+        dropMessage = Lang:t('info.exploit_banned', {discord = WCore.Config.Server.Discord}) })
     TriggerEvent("w_log:server:CreateLog", "anticheat", "Anti-Cheat", "red", name .. " has been banned for exploiting " .. origin, true)
 end
 
@@ -343,9 +337,12 @@ exports('ExploitBan', ExploitBan)
 -- ════════════════════════════════════════════════════════════════════════════
 
 --- Max 32-bit timestamp: the value ExploitBan / w_admin already use for "permanent".
-local BAN_PERMANENT = 2147483647
+local BAN_PERMANENT = WBans.PERMANENT
 
---- Ban a connected player and drop them (same row shape as ExploitBan and w_admin's ban).
+--- Every ban goes through the one store (server/bans.lua, 2026-10-22): the website and w_admin read the
+--- same rows, a lifted ban stays as history.
+
+--- Ban a connected player and drop them.
 ---@param playerId number      connected server id
 ---@param reason string|nil    stored as given (defaults to 'No reason')
 ---@param minutes number|nil   duration in minutes; 0 / nil = permanent
@@ -355,45 +352,19 @@ local BAN_PERMANENT = 2147483647
 local function BanPlayer(playerId, reason, minutes, bannedBy, dropMessage)
     playerId = tonumber(playerId)
     if not playerId or playerId <= 0 then return false, 'invalid_player' end
-
     local name = GetPlayerName(playerId)
     if not name then return false, 'player_offline' end
-
-    local license = WCore.Functions.GetIdentifier(playerId, 'license')
-    if not license then return false, 'no_license' end
-
-    minutes = tonumber(minutes) or 0
-    if minutes < 0 then minutes = 0 end
-
-    local expire = BAN_PERMANENT
-    if minutes > 0 then
-        expire = os.time() + math.floor(minutes) * 60
-        if expire > BAN_PERMANENT then expire = BAN_PERMANENT end
-    end
-
-    reason = tostring(reason or 'No reason'):sub(1, 500)
-    bannedBy = tostring(bannedBy or 'System'):sub(1, 255)
-
-    MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-        name,
-        license,
-        WCore.Functions.GetIdentifier(playerId, 'discord'),
-        WCore.Functions.GetIdentifier(playerId, 'ip'),
-        reason,
-        expire,
-        bannedBy,
+    local ids = WBans.idsOf(playerId)
+    if not ids.license then return false, 'no_license' end
+    local player = WCore.Functions.GetPlayer(playerId)
+    local ci = player and player.PlayerData and player.PlayerData.charinfo
+    local id, err = WBans.add({
+        license = ids.license, discord = ids.discord, steam = ids.steam, ip = ids.ip, name = name,
+        characterName = ci and ((ci.firstname or '') .. ' ' .. (ci.lastname or '')) or nil,
+        reason = reason, minutes = minutes, bannedBy = bannedBy,
+        dropMessage = (type(dropMessage) == 'string' and dropMessage ~= '') and dropMessage or nil,
     })
-
-    TriggerEvent('w_log:server:CreateLog', 'bans', 'Player Banned', 'red',
-        ('%s was banned by %s for %s'):format(name, bannedBy, reason), true)
-
-    if type(dropMessage) ~= 'string' or dropMessage == '' then
-        local t = os.date('*t', expire)
-        local date = ('%s/%s/%s %s:%02d'):format(t.day, t.month, t.year, t.hour, t.min)
-        dropMessage = Lang:t('error.banned', { reason = reason, date = date })
-    end
-
-    DropPlayer(playerId, dropMessage)
+    if not id then return false, err end
     return true, 'success'
 end
 
@@ -403,85 +374,66 @@ exports('BanPlayer', BanPlayer)
 --- Ban a character's account by its citizen id, in play or not. Staff names players by the citizen
 --- id only (w_core/server/citizen.lua): in play this is BanPlayer on his server id (row + drop);
 --- offline the ban row is written from the saved players row (its license, the account the ban
---- checks at connect), with no discord / ip to add. '#5' names server id 5 explicitly.
+--- checks at connect). '#5' names server id 5 explicitly.
 ---@param citizenId string|number  the citizen id ('12', an old 'ABC12345') or '#<server id>'
----@param reason string|nil
----@param minutes number|nil       0 / nil = permanent
----@param bannedBy string|nil
----@param dropMessage string|nil   only used when the player is in play
 ---@return boolean ok, string result  'success' | 'invalid_id' | 'not_found' | 'no_license' | BanPlayer's
 local function BanCitizen(citizenId, reason, minutes, bannedBy, dropMessage)
     local target, why = w.citizen.resolve(citizenId)
     if not target then return false, why or 'not_found' end
     if target.online then return BanPlayer(target.source, reason, minutes, bannedBy, dropMessage) end
-
     local license = target.license
     if type(license) ~= 'string' or license == '' then return false, 'no_license' end
-
-    minutes = tonumber(minutes) or 0
-    if minutes < 0 then minutes = 0 end
-    local expire = BAN_PERMANENT
-    if minutes > 0 then
-        expire = os.time() + math.floor(minutes) * 60
-        if expire > BAN_PERMANENT then expire = BAN_PERMANENT end
-    end
-    reason = tostring(reason or 'No reason'):sub(1, 500)
-    bannedBy = tostring(bannedBy or 'System'):sub(1, 255)
-    -- bans.name: the account name the row was saved with, else the character's
-    local name = (target.row and target.row.name) or target.name or target.citizenid
-
-    MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-        name, license, nil, nil, reason, expire, bannedBy,
+    local id, err = WBans.add({
+        license = license, name = (target.row and target.row.name) or target.name or target.citizenid,
+        characterName = target.name, reason = reason, minutes = minutes, bannedBy = bannedBy,
+        dropMessage = (type(dropMessage) == 'string' and dropMessage ~= '') and dropMessage or nil,
     })
-    TriggerEvent('w_log:server:CreateLog', 'bans', 'Player Banned', 'red',
-        ('%s [%s] was banned (offline) by %s for %s'):format(name, target.citizenid, bannedBy, reason), true)
-
-    -- the ban is on the account: someone connected with it (on another character) leaves now,
-    -- otherwise the ban would only bite at his next connection
-    for _, id in ipairs(GetPlayers()) do
-        local src = tonumber(id)
-        if src and WCore.Functions.GetIdentifier(src, 'license') == license then
-            if type(dropMessage) ~= 'string' or dropMessage == '' then
-                local t = os.date('*t', expire)
-                dropMessage = Lang:t('error.banned', { reason = reason, date = ('%s/%s/%s %s:%02d'):format(t.day, t.month, t.year, t.hour, t.min) })
-            end
-            DropPlayer(src, dropMessage)
-        end
-    end
+    if not id then return false, err end
     return true, 'success'
 end
 
 WCore.Functions.BanCitizen = BanCitizen
 exports('BanCitizen', BanCitizen)
 
---- Remove one ban row by its id.
+--- Ban by identifiers, online or not (the website bans a Discord / Steam / license it holds).
+---@param t table  { license, discord, steam, ip, name, characterName, reason, minutes, bannedBy, dropMessage }
+---@return number|nil id, number|string expireOrErr
+exports('BanIdentifiers', function(t) return WBans.add(t) end)
+
+--- The ban keeping these identifiers out now: row, the refusal text | nil.
+---@param ids table  { license, discord, steam } (bare or prefixed)
+exports('CheckBan', function(ids)
+    local ban = WBans.check(ids)
+    if not ban then return nil end
+    return ban, WBans.message(ban.reason, ban.expire)
+end)
+
+--- Lift one ban (kept as history).
 ---@param id number  bans.id
+---@param by string|nil  who lifted it
 ---@return boolean ok, string result  'success' | 'invalid_id' | 'not_found'
-local function UnbanId(id)
-    id = tonumber(id)
-    if not id or id <= 0 then return false, 'invalid_id' end
-
-    local affected = MySQL.update.await('DELETE FROM bans WHERE id = ?', { id })
-    if not affected or affected == 0 then return false, 'not_found' end
-
-    TriggerEvent('w_log:server:CreateLog', 'bans', 'Player Unbanned', 'green', ('ban #%s removed'):format(id), true)
+local function UnbanId(id, by)
+    local ok, err = WBans.lift(id, by)
+    if not ok then return false, err end
     return true, 'success'
 end
 
 WCore.Functions.UnbanId = UnbanId
 exports('UnbanId', UnbanId)
 
---- Every active ban (expired rows are left alone: the core deletes them on the next join).
---- `expire` is a unix timestamp; 2147483647 means permanent. The table has no `created`
---- column, so `created` is nil -- rows are ordered newest first by id.
----@return { id: number, name: string, license: string, discord: string, ip: string, reason: string, expire: number, bannedby: string, created: nil }[]
-local function GetBans()
-    local rows = MySQL.query.await('SELECT id, name, license, discord, ip, reason, expire, bannedby FROM bans WHERE expire > ? ORDER BY id DESC', { os.time() })
-    return rows or {}
-end
+--- Change a live ban: reason and/or minutes from now (0 = permanent, nil = keep).
+exports('EditBan', function(id, reason, minutes) return WBans.edit(id, reason, minutes) end)
+
+--- Every ban in force, newest first. `expire` is unix seconds (2147483647 = permanent), `created` unix
+--- seconds (nil on rows made before 2026-10-22).
+local function GetBans(limit) return WBans.list(limit) end
 
 WCore.Functions.GetBans = GetBans
 exports('GetBans', GetBans)
+
+--- Every ban (in force, lifted, expired) of these identifiers, newest first.
+exports('GetBanHistory', function(ids) return WBans.history(ids) end)
+exports('CountBans', function() return WBans.count() end)
 
 --- The permission groups the core knows (WConfig.Server.Permissions, e.g. god/admin/mod).
 ---@return string[]

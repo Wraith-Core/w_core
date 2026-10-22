@@ -230,14 +230,31 @@ WCore.Commands.Add('removepermission', Lang:t('command.removepermission.help'), 
 end, 'god')
 
 -- Open & Close Server
+-- One switch (2026-10-22): with w_connector running, these set ITS switch (kept across restarts, the one
+-- the website shows and the queue applies); WCore.Config.Server.Closed is only the fallback without it.
+
+local function connectorUp() return GetResourceState('w_connector') == 'started' end
+local function isClosed()
+    if connectorUp() then
+        local ok, closed = pcall(function() return exports.w_connector:IsServerClosed() end)
+        if ok then return closed == true end
+    end
+    return WCore.Config.Server.Closed == true
+end
+local function setClosed(closed, by)
+    WCore.Config.Server.Closed = closed
+    if connectorUp() then pcall(function() exports.w_connector:SetServerClosed(closed, by) end) end
+end
+WCore.Functions.IsServerClosed = isClosed
+WCore.Functions.SetServerClosed = setClosed
 
 WCore.Commands.Add('openserver', Lang:t('command.openserver.help'), {}, false, function(source)
-    if not WCore.Config.Server.Closed then
+    if not isClosed() then
         notify(source, 'error.server_already_open', nil, 'error')
         return
     end
     if WCore.Functions.HasPermission(source, 'admin') then
-        WCore.Config.Server.Closed = false
+        setClosed(false, source == 0 and 'console' or GetPlayerName(source))
         notify(source, 'success.server_opened', nil, 'success')
     else
         WCore.Functions.Kick(source, 'error.no_permission', nil, nil)
@@ -245,13 +262,13 @@ WCore.Commands.Add('openserver', Lang:t('command.openserver.help'), {}, false, f
 end, 'admin')
 
 WCore.Commands.Add('closeserver', Lang:t('command.closeserver.help'), params('closeserver', { 'reason' }), false, function(source, args)
-    if WCore.Config.Server.Closed then
+    if isClosed() then
         notify(source, 'error.server_already_closed', nil, 'error')
         return
     end
     if WCore.Functions.HasPermission(source, 'admin') then
         local reason = args[1] or 'info.no_reason'
-        WCore.Config.Server.Closed = true
+        setClosed(true, source == 0 and 'console' or GetPlayerName(source))
         WCore.Config.Server.ClosedReason = reason
         for k in pairs(WCore.Players) do
             if not WCore.Functions.HasPermission(k, WCore.Config.Server.WhitelistPermission) then
@@ -373,9 +390,13 @@ WCore.Commands.Add('givexp', Lang:t('command.givexp.help'), params('givexp', { '
     changeSkill(source, args, 'xp', 'AddXp', 'info.xp_added')
 end, 'admin')
 
-WCore.Commands.Add('removexp', Lang:t('command.removexp.help'), params('removexp', { 'id', 'skill', 'amount' }), true, function(source, args)
-    changeSkill(source, args, 'xp', 'RemoveXp', 'info.xp_removed')
-end, 'admin')
+-- /removexp is w_level's (the server's XP) when it is on the server: two resources holding one command
+-- name swap owners on every hot restart (2026-10-22)
+if GetResourceState('w_level') == 'missing' then
+    WCore.Commands.Add('removexp', Lang:t('command.removexp.help'), params('removexp', { 'id', 'skill', 'amount' }), true, function(source, args)
+        changeSkill(source, args, 'xp', 'RemoveXp', 'info.xp_removed')
+    end, 'admin')
+end
 
 WCore.Commands.Add('xp', Lang:t('command.xp.help'), params('xp', { 'skill' }), true, function(source, args)
     local Player = WCore.Functions.GetPlayer(source)
