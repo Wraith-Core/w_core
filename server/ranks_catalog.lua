@@ -312,6 +312,7 @@ local WEB_GROUPS = {
         w('character.block', 'حظر الشخصية وفكه', 'Block and unblock a character'),
         w('character.reassign', 'تغيير رقم المواطن ونقله', 'Change and hand over a citizen id'),
         w('character.delete', 'حذف الشخصية', 'Delete a character'),
+        w('console.news', 'أخبار قائمة الإيقاف', 'Pause menu news'),
     } },
     { id = 'web_whitelist', label = { ar = 'الموقع: القائمة البيضاء', en = 'Website: whitelist' }, nodes = {
         w('whitelist.view', 'مشاهدة', 'View'), w('whitelist.add', 'إضافة', 'Add'), w('whitelist.edit', 'تعديل', 'Edit'),
