@@ -479,12 +479,37 @@ end
 -- skipped, never an error) and each table's single-column primary key (rows are rewritten by
 -- key, not by comparing a long JSON value against the whole table). Re-read after a minute: a
 -- resource started later creates its tables after the first read.
-local columnsCache, keysCache, cacheAt
+-- Only the tables and columns the registries (EXACT, SHAPED) and the ledger checks ask about, plus
+-- each of those tables' primary key: the whole schema was 2300+ rows, read on a character's first
+-- check after a minute, and froze the server ~0.3 s (oxmysql: oversized result set, 2026-10-22).
+local columnsCache, keysCache, cacheAt, schemaFilter
 local SCHEMA_TTL_MS = 60000
+local function schemaQuery()
+    if schemaFilter then return schemaFilter end
+    local tables, cols, seenT, seenC = {}, {}, {}, {}
+    local function add(t, c)
+        if t and not seenT[t] then seenT[t] = true tables[#tables + 1] = t end
+        if c and not seenC[c] then seenC[c] = true cols[#cols + 1] = c end
+    end
+    for _, e in ipairs(EXACT) do add(e[1], e[2]) end
+    for _, e in ipairs(SHAPED) do add(e[1], e[2]) end
+    for _, c in ipairs({ 'owner', 'balance', 'request_key', 'movements', 'actor' }) do add('cb_accounts', c) add('cb_journal', c) end
+    local function marks(n) return ('?,'):rep(n - 1) .. '?' end
+    local values = {}
+    for _, t in ipairs(tables) do values[#values + 1] = t end
+    for _, c in ipairs(cols) do values[#values + 1] = c end
+    schemaFilter = {
+        sql = ('SELECT table_name AS t, column_name AS c, column_key AS k FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name IN (%s) AND (column_key = \'PRI\' OR column_name IN (%s))')
+            :format(marks(#tables), marks(#cols)),
+        values = values,
+    }
+    return schemaFilter
+end
 local function loadSchema()
     if columnsCache and GetGameTimer() - cacheAt < SCHEMA_TTL_MS then return end
     local cols, keys = {}, {}
-    for _, r in ipairs(MySQL.query.await('SELECT table_name AS t, column_name AS c, column_key AS k FROM information_schema.columns WHERE table_schema = DATABASE()') or {}) do
+    local q = schemaQuery()
+    for _, r in ipairs(MySQL.query.await(q.sql, q.values) or {}) do
         cols[r.t .. '.' .. r.c] = true
         if r.k == 'PRI' then
             if keys[r.t] == nil then keys[r.t] = r.c else keys[r.t] = false end -- a composite key: none
