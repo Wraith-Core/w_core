@@ -3,7 +3,7 @@ game 'rdr3'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
 description 'w_core - Wraith Core, the core of Red River (RedM)'
-version '1.0.2'
+version '1.0.3'
 
 -- Dependency names for the public contracts implemented by w_lib/core/compat.
 -- See w_lib/COMPATIBILITY.md for supported APIs and import limits.
