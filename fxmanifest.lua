@@ -3,7 +3,7 @@ game 'rdr3'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
 description 'w_core - Wraith Core, the core of Red River (RedM)'
-version '1.0.4'
+version '1.0.5'
 
 -- Dependency names for the public contracts implemented by w_lib/core/compat.
 -- See w_lib/COMPATIBILITY.md for supported APIs and import limits.
@@ -54,6 +54,7 @@ server_scripts {
     'server/economy.lua',
     'server/player.lua',
     'server/citizen.lua',     -- the sequential citizen id, blocks, reassign, the migration
+    'server/generation.lua',  -- leases across financial callbacks; never part of IsBusy
     'server/events.lua',
     'server/commands.lua',
     'server/exports.lua',

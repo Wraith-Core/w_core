@@ -47,15 +47,16 @@ CreateThread(function()
                 local payment = WJobs[Player.PlayerData.job.name]['grades'][tonumber(Player.PlayerData.job.grade.level)].payment
                 if not payment then payment = Player.PlayerData.job.payment end
                 if Player.PlayerData.job and payment > 0 and (WJobs[Player.PlayerData.job.name].offDutyPay or Player.PlayerData.job.onduty) then
-                    local paid=false
+                    local paid,reason=false,'economy_not_ready'
                     if WCore.Economy.ready() then
                         local from=WCore.Config.Money.PayCheckSociety and ('society:'..Player.PlayerData.job.name) or 'central:reserve'
-                        paid=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.citizenid..':'..cycle)
+                        paid,reason=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.citizenid..':'..cycle)
                     end
                     if paid then
                         TriggerClientEvent('WCore:Notify',Player.PlayerData.source,{key='info.received_paycheck',subs={value=payment}})
                     else
-                        TriggerClientEvent('WCore:Notify',Player.PlayerData.source,'error.company_too_poor','error')
+                        local key = reason == 'insufficient_funds' and WCore.Config.Money.PayCheckSociety and 'error.company_too_poor' or 'error.paycheck_unavailable'
+                        TriggerClientEvent('WCore:Notify',Player.PlayerData.source,key,'error')
                     end
                 end
             end

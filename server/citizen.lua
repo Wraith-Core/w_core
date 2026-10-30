@@ -1165,7 +1165,7 @@ function C.Reassign(old, new, by)
     if not old or not new then return false, 'invalid_id' end
     if not C.IsNumeric(new) then return false, 'invalid_id' end
     if old == new then return false, 'same_id' end
-    if busy[old] or busy[new] then return false, 'busy' end
+    if busy[old] or busy[new] or (C.HasGenerationLease and (C.HasGenerationLease(old) or C.HasGenerationLease(new))) then return false, 'busy' end
     busy[old], busy[new] = true, true
     local result = table.pack(pcall(reassign, old, new, by))
     busy[old], busy[new] = nil, nil
@@ -1675,7 +1675,7 @@ function C.Purge(value, by, opts)
     if not ready then return false, 'not_ready', 'w_core' end
     local citizenid = C.Normalize(value)
     if not citizenid then return false, 'invalid_id', 'w_core' end
-    if busy[citizenid] then return false, 'busy', 'w_core' end
+    if busy[citizenid] or (C.HasGenerationLease and C.HasGenerationLease(citizenid)) then return false, 'busy', 'w_core' end
     busy[citizenid] = true
     by = clip((tostring(by or 'console'):gsub('%c', ' ')), 96)
     if by == '' then by = 'console' end
@@ -1707,7 +1707,7 @@ local function transfer(n, target, by, hold, state)
     local fresh
     for _ = 1, FRESH_TRIES do
         local f = C.Next()
-        if not busy[f] then
+        if not busy[f] and not (C.HasGenerationLease and C.HasGenerationLease(f)) then
             hold(f)
             if not used(f) then fresh = f break end
         end
@@ -1774,7 +1774,7 @@ function C.TransferNumber(value, target, by)
     -- the target takes n: a number, as any id handed out (Reassign)
     if not n or not t or not C.IsNumeric(n) then return false, 'invalid_id' end
     if n == t then return false, 'same_id' end
-    if busy[n] or busy[t] then return false, 'busy' end
+    if busy[n] or busy[t] or (C.HasGenerationLease and (C.HasGenerationLease(n) or C.HasGenerationLease(t))) then return false, 'busy' end
     busy[n], busy[t] = true, true
     local held, state = {}, {}
     local function hold(id) busy[id] = true held[#held + 1] = id end
@@ -1970,6 +1970,7 @@ end
 --- moved, and running it again migrates the rest (the characters still on an old id).
 function C.Migrate(mode)
     if not ready then return print('[w_core] citizen: not ready yet') end
+    if mode=='run' and C.AnyGenerationLease and C.AnyGenerationLease() then return print('^3[w_core] Warning: character settlement active; migration blocked^7') end
     local olds = oldIdsInOrder()
     if #olds == 0 then return print('[w_core] citizen: no character with an old id; nothing to migrate') end
     local start = tonumber(MySQL.scalar.await("SELECT COALESCE(MAX(CAST(citizenid AS UNSIGNED)), 0) FROM players WHERE citizenid REGEXP '^[0-9]+$'")) or 0
@@ -1996,7 +1997,7 @@ function C.Migrate(mode)
     -- a ledger that runs but is not ready renames nothing (as a reassign waits for it)
     if ledgerNotReady() then return print('^1[w_core] citizen: the economy (w_centralbank) is not ready; nothing migrated^7') end
     for _, old in ipairs(olds) do
-        if busy[old] or busy[map[old]] then return print(('^1[w_core] citizen: %s or %s is being worked on; try again^7'):format(old, map[old])) end
+        if busy[old] or busy[map[old]] or (C.HasGenerationLease and (C.HasGenerationLease(old) or C.HasGenerationLease(map[old]))) then return print(('^1[w_core] citizen: %s or %s is being worked on; try again^7'):format(old, map[old])) end
     end
     -- the old ids and their new numbers are held for the whole run: no login of an old id, no
     -- purge or reassign of either, and C.Next hands out no planned number while the run waits

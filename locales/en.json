@@ -12,7 +12,7 @@
         "missing_args": "Not every argument has been entered (x, y, z)",
         "missing_args2": "All arguments must be filled out!",
         "no_access": "No access to this command",
-        "company_too_poor": "Your employer is broke",
+        "company_too_poor": "Your employer has insufficient funds. This paycheck was not paid; contact your manager.",
         "location_not_exist": "Location does not exist",
         "duplicate_license": "Duplicate Rockstar License Found",
         "no_valid_license": "No Valid Rockstar License Found",
@@ -25,7 +25,8 @@
         "no_skill": "That skill does not exist",
         "banned": "You have been banned from the server:\n%{reason}\nYour ban expires %{date}\n",
         "ranks_master_only": "Ranks are for the master only",
-        "rank_failed": "Rank %{rank} not changed: %{reason}"
+        "rank_failed": "Rank %{rank} not changed: %{reason}",
+        "paycheck_unavailable": "This paycheck could not be paid. The payroll service is unavailable; contact staff if this continues."
     },
     "success": {
         "server_opened": "The server has been opened",

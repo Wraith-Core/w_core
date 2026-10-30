@@ -488,6 +488,17 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
 			or (Citizen.RowMoved and Citizen.RowMoved(self.PlayerData.id, self.PlayerData.citizenid))) then
 			return nil
 		end
+        -- No yield before publishing the player: concurrent logins cannot share a character.
+        for otherSource, other in pairs(WCore.Players) do
+            if otherSource ~= self.PlayerData.source and other.PlayerData then
+                local sameCharacter = other.PlayerData.citizenid == self.PlayerData.citizenid
+                local sameLicense = WCore.Config.Server.CheckDuplicateLicense and other.PlayerData.license == self.PlayerData.license
+                if sameCharacter or sameLicense then
+                    DropPlayer(self.PlayerData.source, Lang:t('error.duplicate_license'))
+                    return nil
+                end
+            end
+        end
 		WCore.Players[self.PlayerData.source] = self
 		WCore.Player.Save(self.PlayerData.source)
 

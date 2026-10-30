@@ -388,10 +388,10 @@ end
 
 -- Check for duplicate license
 
-function WCore.Functions.IsLicenseInUse(license)
+function WCore.Functions.IsLicenseInUse(license, ignoreSource)
     local players = GetPlayers()
     for _, player in pairs(players) do
-        local identifiers = GetPlayerIdentifiers(player)
+        local identifiers = tonumber(player) ~= tonumber(ignoreSource) and GetPlayerIdentifiers(player) or {}
         for _, id in pairs(identifiers) do
             if string.find(id, 'license') then
                 if id == license then

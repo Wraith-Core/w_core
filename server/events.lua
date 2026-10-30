@@ -1,4 +1,5 @@
 -- Event Handler
+local lastPlayerRefresh = {}
 
 AddEventHandler('chatMessage', function(_, _, message)
     if string.sub(message, 1, 1) == '/' then
@@ -9,6 +10,7 @@ end)
 
 AddEventHandler('playerDropped', function(reason)
     local src = source
+    lastPlayerRefresh[src] = nil
     if not WCore.Players[src] then return end
     local Player = WCore.Players[src]
     TriggerEvent('w_log:server:CreateLog', 'joinleave', 'Dropped', 'red', '**' .. GetPlayerName(src) .. '** (' .. Player.PlayerData.license .. ') left..' ..'\n **Reason:** ' .. reason)
@@ -46,7 +48,7 @@ local function onPlayerConnecting(name, _, deferrals)
     deferrals.update(string.format(Lang:t('info.checking_whitelisted'), name))
 
     local isBanned, Reason = WCore.Functions.IsPlayerBanned(src)
-    local isLicenseAlreadyInUse = WCore.Functions.IsLicenseInUse(license)
+    local isLicenseAlreadyInUse = WCore.Functions.IsLicenseInUse(license, src)
     local isWhitelist, whitelisted = WCore.Config.Server.Whitelist, WCore.Functions.IsWhitelisted(src)
 
     Wait(0)
@@ -61,15 +63,9 @@ local function onPlayerConnecting(name, _, deferrals)
         return deferrals.done(Reason)
     end
 
-    -- if not license then
-    --   return deferrals.done(Lang:t('error.no_valid_license'))
-    -- elseif isBanned then
-    --     return deferrals.done(Reason)
-    -- elseif isLicenseAlreadyInUse and WCore.Config.Server.CheckDuplicateLicense then
-    --     return deferrals.done(Lang:t('error.duplicate_license'))
-    -- elseif isWhitelist and not whitelisted then
-    --   return deferrals.done(Lang:t('error.not_whitelisted'))
-    -- end
+    if isLicenseAlreadyInUse and WCore.Config.Server.CheckDuplicateLicense then
+        return deferrals.done(Lang:t('error.duplicate_license'))
+    end
 
     deferrals.done()
 
@@ -129,24 +125,15 @@ local function hudOwnsNeeds()
     return GetResourceState('w_hud') == 'started'
 end
 
+-- Legacy clients may ask for a fresh snapshot, never a database write or needs decay.
 RegisterNetEvent('WCore:UpdatePlayer', function()
     local src = source
-    local Player = WCore.Functions.GetPlayer(src)
-    if not Player then return end
-    if not hudOwnsNeeds() then
-        local newHunger = Player.PlayerData.metadata.hunger - WCore.Config.Player.HungerRate
-        local newThirst = Player.PlayerData.metadata.thirst - WCore.Config.Player.ThirstRate
-        if newHunger <= 0 then
-            newHunger = 0
-        end
-        if newThirst <= 0 then
-            newThirst = 0
-        end
-        Player.Functions.SetMetaData('thirst', newThirst)
-        Player.Functions.SetMetaData('hunger', newHunger)
-        TriggerClientEvent('hud:client:UpdateNeeds', src, newHunger, newThirst, 100)
-    end
-    Player.Functions.Save()
+    local now = GetGameTimer()
+    if lastPlayerRefresh[src] and now - lastPlayerRefresh[src] < 1000 then return end
+    local player = WCore.Functions.GetPlayer(src)
+    if not player then return end
+    lastPlayerRefresh[src] = now
+    player.Functions.UpdatePlayerData()
 end)
 
 -- ⚠️ A net event: any client can fire it, with any key and any value, and it used to write both
