@@ -154,6 +154,20 @@ function WCore.Commands.Refresh(source)
 end
 
 -- Teleport
+-- A permit belongs to one command that already passed its native ACE gate, never to a staff rank.
+-- The waypoint client is bounded to 45 s; the 50 s permit adds a best-effort delivery/cleanup margin.
+local function allowCommandTeleport(source, waypoint)
+    if GetResourceState('w_guard') ~= 'started' then return true end
+    if source <= 0 or not GetPlayerName(source) then return false end
+    local ok, allowed = pcall(function() return exports.w_guard:AllowMove(source, waypoint and 50 or 10) end)
+    if not ok or allowed ~= true then return false end
+    if waypoint then
+        ok, allowed = pcall(function() return exports.w_guard:AllowFlag(source, 'fly', 50) end)
+        if not ok or allowed ~= true then return false end
+    end
+    return true
+end
+
 WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z' }), false, function(source, args)
     if args[1] and not args[2] and not args[3] then
         -- one argument: a citizen id (12, ABC12345) or '#5' is a player, any other word a location
@@ -165,6 +179,7 @@ WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z'
             local ped = GetPlayerPed(target.source)
             if ped ~= 0 then
                 local coords = GetEntityCoords(ped)
+                if not allowCommandTeleport(source, false) then return notify(source, 'error.tp_error', nil, 'error') end
                 TriggerClientEvent('WCore:Command:TeleportToPlayer', source, coords)
             else
                 notify(source, 'error.not_online', nil, 'error')
@@ -172,6 +187,7 @@ WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z'
         else
             local location = WShared.Locations[args[1]]
             if location then
+                if not allowCommandTeleport(source, false) then return notify(source, 'error.tp_error', nil, 'error') end
                 TriggerClientEvent('WCore:Command:TeleportToCoords', source, location.x, location.y, location.z, location.w)
             else
                 notify(source, 'error.location_not_exist', nil, 'error')
@@ -183,6 +199,7 @@ WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z'
             local y = tonumber((args[2]:gsub(",", ""))) + .0
             local z = tonumber((args[3]:gsub(",", ""))) + .0
             if x ~= 0 and y ~= 0 and z ~= 0 then
+                if not allowCommandTeleport(source, false) then return notify(source, 'error.tp_error', nil, 'error') end
                 TriggerClientEvent('WCore:Command:TeleportToCoords', source, x, y, z)
             else
                 notify(source, 'error.wrong_format', nil, 'error')
@@ -194,6 +211,7 @@ WCore.Commands.Add('tp', Lang:t('command.tp.help'), params('tp', { 'x', 'y', 'z'
 end, 'admin')
 
 WCore.Commands.Add('tpm', Lang:t('command.tpm.help'), {}, false, function(source)
+    if not allowCommandTeleport(source, true) then return notify(source, 'error.tp_error', nil, 'error') end
     TriggerClientEvent('WCore:Command:GoToMarker', source)
 end, 'admin')
 

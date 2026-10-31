@@ -107,85 +107,102 @@ RegisterNetEvent('WCore:Command:TeleportToCoords', function(x, y, z, h)
 end)
 
 -- Teleport to Waypoint --
+local waypointOperation
 RegisterNetEvent('WCore:Command:GoToMarker', function()
-    local PlayerPedId = PlayerPedId
-    local GetEntityCoords = GetEntityCoords
-    local GetGroundZAndNormalFor_3dCoord = GetGroundZAndNormalFor_3dCoord
-
+    if waypointOperation then return end
     if not IsWaypointActive() then
         WCore.Functions.Notify(Lang:t("error.no_waypoint"), "error", 5000)
         return 'marker'
     end
-
-    --Fade screen to hide how clients get teleported.
-    DoScreenFadeOut(650)
-    while not IsScreenFadedOut() do Wait(0) end
-
     local ped, coords <const> = cache.ped, GetWaypointCoords()
+    if not DoesEntityExist(ped) then return end
     local vehicle = GetVehiclePedIsIn(ped, false)
     local oldCoords <const> = GetEntityCoords(ped)
-
-    -- Unpack coords instead of having to unpack them while iterating.
-    -- 825.0 seems to be the max a player can reach while 0.0 being the lowest.
-    local x, y, groundZ, Z_START = coords['x'], coords['y'], 850.0, 950.0
-    local found = false
-    if vehicle > 0 then
-        FreezeEntityPosition(vehicle, true)
-    else
-        FreezeEntityPosition(ped, true)
+    local entity = vehicle > 0 and vehicle or ped
+    local started, frozen, moved = GetGameTimer(), false, false
+    local deadline = started + 45000
+    local originalFrozen = false
+    if type(IsEntityPositionFrozen) == 'function' then
+        local ok, value = pcall(IsEntityPositionFrozen, entity)
+        originalFrozen = ok and (value == true or value == 1)
+    end
+    local operation = { cancelled = false, cleaned = false }
+    waypointOperation = operation
+    local function current()
+        return waypointOperation == operation and not operation.cancelled and cache.ped == ped and DoesEntityExist(ped)
+    end
+    local function before(limit)
+        local now = GetGameTimer()
+        return current() and now >= started and now < limit
+    end
+    local completed = false
+    function operation.cleanup()
+        if operation.cleaned then return end
+        operation.cleaned = true
+        pcall(Citizen.InvokeNative, 0x5A8B01199C3E79C3)
+        -- Timeout may restore the original position once, but can never continue toward the waypoint.
+        if moved and not completed and cache.ped == ped and DoesEntityExist(ped) then
+            pcall(SetEntityCoords, ped, oldCoords.x, oldCoords.y, oldCoords.z)
+        end
+        if frozen and DoesEntityExist(entity) then pcall(FreezeEntityPosition, entity, originalFrozen) end
+        DoScreenFadeIn(650)
+        if waypointOperation == operation then waypointOperation = nil end
     end
 
-    for i = Z_START, 0, -25.0 do
-        local z = i
-        if (i % 2) ~= 0 then
-            z = Z_START - i
+    local ok, found = pcall(function()
+        DoScreenFadeOut(650)
+        while not IsScreenFadedOut() do
+            if not before(started + 3000) then return false end
+            Wait(0)
         end
-        Citizen.InvokeNative(0x387AD749E3B69B70, x, y, z, x, y, z, 50.0, 0)
-        local curTime = GetGameTimer()
-        while Citizen.InvokeNative(0xCF45DF50C7775F2A) do
-            if GetGameTimer() - curTime > 1000 then
-                break
+        if not before(deadline) then return false end
+        FreezeEntityPosition(entity, true)
+        frozen = true
+        local x, y, Z_START = coords.x, coords.y, 950.0
+        for i = Z_START, 0, -25.0 do
+            if not before(deadline) then return false end
+            local z = i % 2 ~= 0 and Z_START - i or i
+            Citizen.InvokeNative(0x387AD749E3B69B70, x, y, z, x, y, z, 50.0, 0)
+            local probeStarted = GetGameTimer()
+            while Citizen.InvokeNative(0xCF45DF50C7775F2A) do
+                if not before(deadline) then return false end
+                if GetGameTimer() - probeStarted >= 1000 then break end
+                Wait(0)
             end
-            Wait(0)
-        end
-        Citizen.InvokeNative(0x5A8B01199C3E79C3)
-        SetEntityCoords(ped, x, y, z - 1000)
-        while Citizen.InvokeNative(0xCF45DF50C7775F2A) do
-            RequestCollisionAtCoord(x, y, z)
-            if GetGameTimer() - curTime > 1000 then
-                break
+            Citizen.InvokeNative(0x5A8B01199C3E79C3)
+            if not before(deadline) then return false end
+            moved = true
+            SetEntityCoords(ped, x, y, z - 1000)
+            while Citizen.InvokeNative(0xCF45DF50C7775F2A) do
+                if not before(deadline) then return false end
+                RequestCollisionAtCoord(x, y, z)
+                if GetGameTimer() - probeStarted >= 1000 then break end
+                Wait(0)
             end
+            if not before(deadline) then return false end
+            local hasGround, groundZ = GetGroundZAndNormalFor_3dCoord(x, y, z)
+            if (hasGround == true or hasGround == 1) and type(groundZ) == 'number'
+                and groundZ == groundZ and math.abs(groundZ) < 1000000 then
+                Wait(0)
+                if not before(deadline) then return false end
+                SetEntityCoords(ped, x, y, groundZ)
+                return true
+            end
+            if not before(deadline) then return false end
             Wait(0)
         end
-        -- Get ground coord. As mentioned in the natives, this only works if the client is in render distance.
-        --found, groundZ = GetGroundZFor_3dCoord(x, y, z, false)
-        found, groundZ = GetGroundZAndNormalFor_3dCoord(x, y, z)
-        if found then
-            Wait(0)
-            SetEntityCoords(ped, x, y, groundZ)
-            break
-        end
-        Wait(0)
-    end
+        return false
+    end)
+    completed = ok and found == true
+    operation.cleanup()
+    if operation.cancelled then return end
+    WCore.Functions.Notify(Lang:t(completed and 'success.teleported_waypoint' or 'error.tp_error'), completed and 'success' or 'error', 5000)
+end)
 
-    -- Remove black screen once the loop has ended.
-    DoScreenFadeIn(650)
-    if vehicle > 0 then
-        FreezeEntityPosition(vehicle, false)
-    else
-        FreezeEntityPosition(ped, false)
-    end
-
-    if not found then
-        -- If we can't find the coords, set the coords to the old ones.
-        -- We don't unpack them before since they aren't in a loop and only called once.
-        SetEntityCoords(ped, oldCoords['x'], oldCoords['y'], oldCoords['z'] - 1.0)
-        WCore.Functions.Notify(Lang:t("error.tp_error"), "error", 5000)
-    end
-
-    -- If Z coord was found, set coords in found coords.
-    SetEntityCoords(ped, x, y, groundZ)
-    WCore.Functions.Notify(Lang:t("success.teleported_waypoint"), "success", 5000)
+AddEventHandler('onResourceStop', function(resource)
+    if resource ~= GetCurrentResourceName() or not waypointOperation then return end
+    waypointOperation.cancelled = true
+    waypointOperation.cleanup()
 end)
 
 -- Spawn Wagon --
