@@ -2041,9 +2041,11 @@ exports('CharacterDependencies', function(id) return C.Dependencies(id) end)
 -- console; the player's own deletion reaches WCore.Player.DeleteCharacter through the core object,
 -- not these exports): any other resource could otherwise wipe a live character or move it onto a
 -- sold number, and every resource's PurgeCharacter trusts w_core alone.
+-- 1.0.8: w_connector too: the website's admin panel and its in-game console now run the characters page
+-- themselves (connector 2.2.0, no w_admin needed); the website checks the staff member's rank first.
 local function mayDelete()
     local caller = GetInvokingResource()
-    return caller == nil or caller == 'w_admin' or caller == GetCurrentResourceName()
+    return caller == nil or caller == 'w_admin' or caller == 'w_connector' or caller == GetCurrentResourceName()
 end
 exports('BlockCharacter', function(id, reason, by)
     if not mayDelete() then return false, 'forbidden' end
