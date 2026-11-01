@@ -617,10 +617,15 @@ end
 function WCore.Player.Save(source)
 	local ped = GetPlayerPed(source)
 	local pcoords = GetEntityCoords(ped)
-	local PlayerData = WCore.Players[source].PlayerData
+	local player = WCore.Players[source]
+	local PlayerData = player.PlayerData
 	if PlayerData then
 		local citizenid = PlayerData.citizenid
 		if saveBlocked(PlayerData) then return end
+		-- only a loaded row carries its players.id (Login's SELECT): a character created this
+		-- session has none until its first save lands, and every resource that checks the row
+		-- (w_creators, w_crafting, w_gunsmith, the purge/move guards above) needs it
+		local needsRowId = PlayerData.id == nil
 		saveStarted(citizenid)
 		MySQL.insert(
 			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
@@ -636,7 +641,19 @@ function WCore.Player.Save(source)
 				position = json.encode(pcoords),
 				metadata = json.encode(PlayerData.metadata),
 			},
-			function() saveDone(citizenid) end
+			function()
+				saveDone(citizenid)
+				if not needsRowId then return end
+				-- read by its number, never this ON DUPLICATE KEY UPDATE's insertId (not the row's
+				-- id when it updated one); set only while the same character is still in play
+				MySQL.scalar('SELECT id FROM players WHERE citizenid = ? LIMIT 1', { citizenid }, function(rowId)
+					rowId = tonumber(rowId)
+					if rowId and WCore.Players[source] == player and player.PlayerData == PlayerData
+						and PlayerData.citizenid == citizenid and PlayerData.id == nil then
+						player.Functions.SetPlayerData('id', rowId)
+					end
+				end)
+			end
 		)
 		if GetResourceState("w_inventory") ~= "missing" then
 			exports["rsg-inventory"]:SaveInventory(source)
