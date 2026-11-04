@@ -21,6 +21,30 @@ end)
 
 -- Player Connecting
 
+-- The connecting screen's cards (server/joincard.lua; 2026-11-04 the owner: the plain text read scrambled)
+local function missingCard(kinds)
+    local steps = {}
+    for _, kind in ipairs(kinds or {}) do steps[#steps + 1] = Lang:t('join.step_' .. kind) end
+    steps[#steps + 1] = Lang:t('join.step_restart')
+    local names = {}
+    for _, kind in ipairs(kinds or {}) do names[#names + 1] = Lang:t('error.identity_' .. kind) end
+    return JoinCard.render({
+        tone = 'error', title = Lang:t('join.missing_title'),
+        body = Lang:t('join.missing_body', { identifiers = table.concat(names, Lang:t('join.list_and')) }),
+        stepsTitle = Lang:t('join.steps_title'), steps = steps,
+    })
+end
+
+local function banCard(ban, fallback)
+    if type(ban) ~= 'table' then return JoinCard.render({ tone = 'ban', title = Lang:t('join.banned_title'), body = fallback }) end
+    local expire = tonumber(ban.expire) or WBans.PERMANENT
+    local untilText = expire >= WBans.PERMANENT and Lang:t('join.ban_forever') or os.date('%Y/%m/%d %H:%M', expire)
+    local facts = { { Lang:t('join.ban_reason'), (ban.reason and ban.reason ~= '') and ban.reason or '-' } }
+    facts[#facts + 1] = { Lang:t('join.ban_until'), untilText }
+    if ban.id then facts[#facts + 1] = { Lang:t('join.ban_number'), tostring(ban.id), code = true } end
+    return JoinCard.render({ tone = 'ban', title = Lang:t('join.banned_title'), facts = facts, note = Lang:t('join.ban_appeal') })
+end
+
 local function onPlayerConnecting(name, _, deferrals)
     local src = source
     deferrals.defer()
@@ -28,43 +52,46 @@ local function onPlayerConnecting(name, _, deferrals)
     -- Mandatory wait
     Wait(0)
 
-    local valid, reason, identifiers = WCore.Functions.ValidatePlayerIdentifiers(src)
-    if not valid then return deferrals.done(reason) end
+    local valid, _, identifiers, missingKinds = WCore.Functions.ValidatePlayerIdentifiers(src)
+    if not valid then return deferrals.done(missingCard(missingKinds)) end
     local license = identifiers.license
 
     -- with w_connector running ITS switch is the one (the website, w_admin and /closeserver set it) and its
     -- queue is the gate that applies it; this flag is only the fallback without it (2026-10-22)
     if WCore.Config.Server.Closed and GetResourceState('w_connector') ~= 'started' then
         if not IsPlayerAceAllowed(src, 'wraithadmin.join') then
-            return deferrals.done(Lang:t(WCore.Config.Server.ClosedReason))
+            local reason = WCore.Config.Server.ClosedReason
+            return deferrals.done(JoinCard.render({ tone = 'closed', title = Lang:t('join.closed_title'),
+                body = (reason and reason ~= 'info.server_closed_default') and Lang:t(reason) or Lang:t('join.closed_body') }))
         end
     end
 
-    deferrals.update(string.format(Lang:t('info.checking_ban'), name))
+    deferrals.update(JoinCard.line(string.format(Lang:t('info.checking_ban'), name)))
 
     -- Mandatory wait
     Wait(0)
 
-    deferrals.update(string.format(Lang:t('info.checking_whitelisted'), name))
+    deferrals.update(JoinCard.line(string.format(Lang:t('info.checking_whitelisted'), name)))
 
-    local isBanned, Reason = WCore.Functions.IsPlayerBanned(src)
+    local isBanned, Reason, banRow = WCore.Functions.IsPlayerBanned(src)
     local isLicenseAlreadyInUse = WCore.Functions.IsLicenseInUse(license, src)
     local isWhitelist, whitelisted = WCore.Config.Server.Whitelist, WCore.Functions.IsWhitelisted(src)
 
     Wait(0)
 
-    deferrals.update(string.format(Lang:t('info.join_server'), name))
+    deferrals.update(JoinCard.line(string.format(Lang:t('info.join_server'), name)))
     Wait(0)
 
     -- ★ The ban check stays on (2026-10-14). It sat commented out with the rest below, so a ban from
     --   w_admin's console (or BanPlayer / ExploitBan) dropped the player and he walked straight back
     --   in: nothing else reads the `bans` table at connect (w_connector reads only its own wc_bans).
     if isBanned then
-        return deferrals.done(Reason)
+        return deferrals.done(banCard(banRow, Reason))
     end
 
     if isLicenseAlreadyInUse and WCore.Config.Server.CheckDuplicateLicense then
-        return deferrals.done(Lang:t('error.duplicate_license'))
+        return deferrals.done(JoinCard.render({ tone = 'error', title = Lang:t('join.duplicate_title'),
+            body = Lang:t('join.duplicate_body') }))
     end
 
     deferrals.done()

@@ -1,4 +1,24 @@
 {
+    "join": {
+        "missing_title": "Could not join the server",
+        "missing_body": "Your game did not send: %{identifiers}. We need it to recognise your account.",
+        "list_and": " and ",
+        "steps_title": "What to do",
+        "step_steam": "Open Steam on your PC and sign in.",
+        "step_discord": "Open the Discord desktop app and sign in; allow the link if RedM asks.",
+        "step_license": "Sign in to the Rockstar launcher with a valid account.",
+        "step_restart": "Close RedM completely, start it again and join the server.",
+        "banned_title": "You are banned from this server",
+        "ban_reason": "Reason",
+        "ban_until": "Ban ends",
+        "ban_forever": "Permanent",
+        "ban_number": "Ban number",
+        "ban_appeal": "To appeal, contact the staff on Discord and give your ban number.",
+        "closed_title": "The server is closed right now",
+        "closed_body": "Please try again later, and follow the news on our Discord.",
+        "duplicate_title": "Your account is already on the server",
+        "duplicate_body": "This Rockstar account is connected from another PC. Leave there, then try again."
+    },
     "error": {
         "required_identifiers": "Connection refused. Required identifiers are missing: %{identifiers}. Sign into Discord and Steam before starting RedM, link Discord when prompted, and use a valid Rockstar account. Restart RedM and reconnect.",
         "identity_discord": "Discord",

@@ -383,7 +383,7 @@ function WCore.Functions.IsPlayerBanned(source)
     -- the one ban store (server/bans.lua): license, Discord or Steam, whichever side banned him
     local ban = WBans.check(WBans.idsOf(source))
     if not ban then return false end
-    return true, WBans.message(ban.reason, ban.expire)
+    return true, WBans.message(ban.reason, ban.expire), ban
 end
 
 -- Check for duplicate license

@@ -1,4 +1,24 @@
 {
+    "join": {
+        "missing_title": "تعذّر دخولك إلى السيرفر",
+        "missing_body": "لم يصلنا من جهازك: %{identifiers}. نحتاجه لنتعرّف على حسابك.",
+        "list_and": " و",
+        "steps_title": "ماذا تفعل؟",
+        "step_steam": "افتح Steam على جهازك وسجّل دخولك فيه.",
+        "step_discord": "افتح تطبيق Discord على الكمبيوتر وسجّل دخولك، ووافق على ربطه إذا طلب منك RedM.",
+        "step_license": "سجّل دخولك في مشغّل Rockstar بحساب صحيح.",
+        "step_restart": "أغلق RedM تمامًا، ثم شغّله من جديد وادخل السيرفر.",
+        "banned_title": "أنت محظور من هذا السيرفر",
+        "ban_reason": "السبب",
+        "ban_until": "ينتهي الحظر",
+        "ban_forever": "حظر دائم",
+        "ban_number": "رقم الحظر",
+        "ban_appeal": "للاعتراض، تواصل مع الإدارة في الديسكورد واذكر رقم الحظر.",
+        "closed_title": "السيرفر مغلق الآن",
+        "closed_body": "حاول الدخول لاحقًا، وتابع الإعلانات في الديسكورد.",
+        "duplicate_title": "حسابك داخل السيرفر الآن",
+        "duplicate_body": "حساب Rockstar هذا متصل بالسيرفر من جهاز آخر. اخرج منه هناك، ثم حاول مجددًا."
+    },
     "error": {
         "required_identifiers": "تعذّر الدخول لغياب المعرّفات المطلوبة: %{identifiers}. سجّل دخولك في Discord وSteam قبل تشغيل RedM، واربط Discord عند الطلب، واستخدم حساب Rockstar صالحًا. أعد تشغيل RedM ثم اتصل مجددًا.",
         "identity_discord": "ديسكورد",

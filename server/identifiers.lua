@@ -19,14 +19,16 @@ end
 
 function WCore.Functions.ValidatePlayerIdentifiers(src)
     local identifiers = WCore.Functions.GetIdentifiers(src)
-    local missing = {}
+    local missing, kinds = {}, {}
     for _, provider in ipairs(providers) do
         if not identifiers[provider] then
             missing[#missing + 1] = Lang:t('error.identity_' .. provider)
+            kinds[#kinds + 1] = provider
         end
     end
     if #missing > 0 then
-        return false, Lang:t('error.required_identifiers', { identifiers = table.concat(missing, ', ') })
+        -- 4th value: the missing providers, for the connecting screen's card (events.lua)
+        return false, Lang:t('error.required_identifiers', { identifiers = table.concat(missing, ', ') }), nil, kinds
     end
     return true, nil, identifiers
 end
