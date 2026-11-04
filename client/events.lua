@@ -110,11 +110,18 @@ end)
 local waypointOperation
 RegisterNetEvent('WCore:Command:GoToMarker', function()
     if waypointOperation then return end
-    if not IsWaypointActive() then
+    -- the game's waypoint, else w_map's (2026-11-04: w_map draws its waypoint as its own GPS blip, so
+    -- IsWaypointActive stayed false and /tpm said "no waypoint" with one on the map)
+    local target = IsWaypointActive() and GetWaypointCoords() or nil
+    if not target and GetResourceState('w_map') == 'started' then
+        local ok, w = pcall(function() return exports.w_map:GetWaypoint() end)
+        if ok and type(w) == 'table' and tonumber(w.x) and tonumber(w.y) then target = vector3(tonumber(w.x), tonumber(w.y), 0.0) end
+    end
+    if not target then
         WCore.Functions.Notify(Lang:t("error.no_waypoint"), "error", 5000)
         return 'marker'
     end
-    local ped, coords <const> = cache.ped, GetWaypointCoords()
+    local ped, coords <const> = cache.ped, target
     if not DoesEntityExist(ped) then return end
     local vehicle = GetVehiclePedIsIn(ped, false)
     local oldCoords <const> = GetEntityCoords(ped)
