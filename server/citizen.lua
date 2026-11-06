@@ -1,11 +1,12 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- w_core · server/citizen.lua — the citizen id: sequential, stable, the one id staff works with
+-- w_core · server/citizen.lua — the citizen id: random 4 digits, stable, the one id staff works with
 --
 -- ═══ The id ═══
---   A new character gets the next free number: 1, 2, 3 ... (WCore.Citizen.Next). It is stored as a
+--   A new character gets a random free 4-digit number, never a special one (owner 2026-11-06,
+--   WCore.Citizen.Next / IsSpecialNumber; it was 1, 2, 3 ... until then). It is stored as a
 --   STRING of digits in players.citizenid, the same column and type as before, so every resource
 --   that compares, concatenates or length-checks it keeps working. A number an admin handed out
---   ("vanity": 7, 100, 777) is simply skipped by the counter.
+--   ("vanity": 7, 100, 777) is simply never picked again while it is held.
 --   A number is USED while a character holds it or anything is still filed under it (used()).
 --   Deleting a character (Purge) and moving it to another number (Reassign) both leave the number
 --   clean, so staff can hand it to another character at once (a vanity id that was not renewed).
@@ -809,26 +810,61 @@ local function used(citizenid, fast)
     return #C.Dependencies(citizenid, true) > 0
 end
 
+--- Is this number a "special" one (owner 2026-11-06: special numbers are sold, so a new character
+--- never gets one by chance)? Any of:
+---   all one digit (1111) · a straight run up or down (1234, 9876) · a mirror (1221, 1001, 12321)
+---   · two pairs (1122, 1212) · a round number, ending in 00 (1000, 4500) · one digit three times
+---   or more (1112, 1711, 7779).
+--- Staff can still give any number by hand (Reassign); this only rules the automatic pick.
+function C.IsSpecialNumber(value)
+    local s = tostring(value or '')
+    if not s:match('^%d+$') then return false end
+    local n = #s
+    if n < 2 then return true end
+    local up, down = true, true
+    for i = 2, n do
+        local a, b = s:byte(i - 1), s:byte(i)
+        if b ~= a + 1 then up = false end
+        if b ~= a - 1 then down = false end
+    end
+    if up or down then return true end
+    if s == s:reverse() then return true end
+    if s:sub(-2) == '00' then return true end
+    local count = {}
+    for i = 1, n do
+        local d = s:sub(i, i)
+        count[d] = (count[d] or 0) + 1
+        if count[d] >= 3 then return true end
+    end
+    if n == 4 then
+        local a, b, c, d = s:sub(1, 1), s:sub(2, 2), s:sub(3, 3), s:sub(4, 4)
+        if (a == b and c == d) or (a == c and b == d) then return true end
+    end
+    return false
+end
+
 local nextLock = false
---- The next free sequential id. The counter lives in w_core_citizen_seq; it starts at the highest
---- numeric id already used, and a number that is taken (see used()), being worked on or just
---- purged is skipped. The counter only climbs: a freed number goes back out through Reassign.
+--- The id of a new character (owner 2026-11-06): a RANDOM 4-digit number (1000-9999), never in
+--- order, never a special one (C.IsSpecialNumber), never one that is taken (see used()), being
+--- worked on or just purged. If the 4-digit numbers are nearly all used, it moves on to 5 digits,
+--- then 6. (Before 2026-11-06 it was sequential: 1, 2, 3 ... from w_core_citizen_seq, which the
+--- migration and a number transfer still keep up to date.)
+local RANDOM_TRIES = 400
 function C.Next()
     while nextLock do Wait(0) end
     nextLock = true
     local ok, id = pcall(function()
-        local cur = tonumber(MySQL.scalar.await("SELECT v FROM w_core_citizen_seq WHERE k = 'citizen'"))
-        if not cur then
-            cur = tonumber(MySQL.scalar.await("SELECT COALESCE(MAX(CAST(citizenid AS UNSIGNED)), 0) FROM players WHERE citizenid REGEXP '^[0-9]+$'")) or 0
-            MySQL.insert.await("INSERT IGNORE INTO w_core_citizen_seq (k, v) VALUES ('citizen', ?)", { cur })
+        for digits = 4, 6 do
+            local lo, hi = 10 ^ (digits - 1), 10 ^ digits - 1
+            for _ = 1, RANDOM_TRIES do
+                local candidate = idOf(math.random(math.floor(lo), math.floor(hi)))
+                if not C.IsSpecialNumber(candidate)
+                    and not (busy[candidate] or C.SaveBlocked(candidate) or used(candidate, true)) then
+                    return candidate
+                end
+            end
         end
-        local n = cur
-        repeat
-            n = n + 1
-            local candidate = idOf(n)
-        until not (busy[candidate] or C.SaveBlocked(candidate) or used(candidate, true))
-        MySQL.update.await("UPDATE w_core_citizen_seq SET v = ? WHERE k = 'citizen'", { math.floor(n) })
-        return idOf(n)
+        error('no free citizen id found')
     end)
     nextLock = false
     if not ok then error(id) end

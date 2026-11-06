@@ -188,6 +188,16 @@ RanksCatalog = {
         },
     },
     {
+        -- w_centralbank 2.1.4 (owner 2026-11-06): printing money and gold is the master's alone; he gives this node
+        -- to a rank only if he wants someone else to print. No job grade prints any more.
+        id = 'centralbank', label = { ar = 'البنك المركزي', en = 'Central bank' },
+        nodes = {
+            n('w_centralbank.print', 'البنك المركزي: طباعة المال والذهب', 'Central bank: print money and gold',
+                'يطبع الدولار والذهب (يزيد ميزانية السيرفر). للماستر وحده، إلا إذا أعطاها لرتبة.',
+                'Prints dollars and gold (raises the server budget). The master only, unless he gives it to a rank.', true),
+        },
+    },
+    {
         -- w_kingdoms' board (/kingdomadmin): kingdoms, their lands (districts and drawn lands), capitals, kings and
         -- offices. Drawing a land's shape is the map editor's own node (w_map.editor).
         id = 'kingdoms', label = { ar = 'الممالك', en = 'Kingdoms' },

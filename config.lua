@@ -33,7 +33,9 @@ WConfig.Server.Permissions = { 'god', 'admin', 'mod' } -- Add as many groups as 
 
 WConfig.NotifyPosition = false -- false: the player's own choice in /w_lib | 'top' | 'top-right' | 'top-left' | 'bottom' | 'bottom-right' | 'bottom-left'
 
+-- owner 2026-11-06: what a new character finds in the bag (given by server/starter_items.lua once the central
+-- bank paid the starter money, w_centralbank config starter = 30 cash + 50 bank). Item names: w_inventory/data/items.lua
 WConfig.StarterItems = {
-    ['bread'] 			= { amount = 10, item = 'bread' },
-    ['water_bottle'] 	= { amount = 10, item = 'water_bottle' },
+    { item = 'rdr_water_flask',       amount = 2 },
+    { item = 'consumable_bread_roll', amount = 2 },
 }
