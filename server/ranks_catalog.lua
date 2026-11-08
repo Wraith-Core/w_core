@@ -136,6 +136,7 @@ RanksCatalog = {
             n('w_jobs.edit', 'الوظائف: تعديل', 'Jobs: edit', 'ينشئ المسودات ويعدّلها ويجرّبها.', 'Creates, edits and tests drafts.'),
             n('w_jobs.publish', 'الوظائف: نشر', 'Jobs: publish', 'ينشر الوظائف ويوقفها ويسترجعها ويحذفها.', 'Publishes, disables, rolls back and deletes jobs.'),
             n('w_missions.admin', 'المهمات', 'Missions', 'إدارة المهمات ولوحتها.', 'Missions and their board.'),
+            n('w_medic.admin', 'الأطباء: الإدارة', 'Doctors: admin', 'إدارة نظام الأطباء والمستشفى وأدواته.', 'The doctors and hospital system and its tools.'),
         },
     },
     {
@@ -205,6 +206,7 @@ RanksCatalog = {
             n('w_kingdoms.admin', 'الممالك: كاملة', 'Kingdoms: full',
                 'ينشئ الممالك ويوزع الأراضي ويحدد العواصم ويعيّن الملوك والمناصب (/kingdomadmin).',
                 'Creates kingdoms, hands out lands, sets capitals, seats kings and offices (/kingdomadmin).', true),
+            n('w_tribes.admin', 'القبائل: الإدارة', 'Tribes: admin', 'لوحة القبائل وأعضائها وخزائنها (/tribeadmin).', 'The tribes board, members and treasuries (/tribeadmin).', true),
         },
     },
     {
@@ -246,6 +248,7 @@ RanksCatalog = {
             n('wraith_cinema.calibrate', 'السينما: المعايرة', 'Cinema: calibration', 'يضبط الشاشات.', 'Calibrates the screens.'),
             n('wraith_cinema.logs', 'السينما: السجل', 'Cinema: logs', 'يقرأ سجل السينما.', 'Reads the cinema log.'),
             n('w_baloot.admin', 'البلوت', 'Baloot', 'يضيف ويحذف طاولات البلوت (/baloot).', 'Adds and removes Baloot tables (/baloot).'),
+            n('w_train.admin', 'القطار: المحطات', 'Train: stations', 'يضيف ويعدّل محطات القطار والعربات والمنطاد (/trainadmin).', 'Adds and edits train, coach and balloon stations (/trainadmin).'),
         },
     },
     {
