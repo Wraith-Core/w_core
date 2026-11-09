@@ -3,7 +3,7 @@ game 'rdr3'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
 description 'w_core - Wraith Core, the core of Red River (RedM)'
-version '1.0.13'
+version '1.0.14'
 
 -- Dependency names for the public contracts implemented by w_lib/core/compat.
 -- See w_lib/COMPATIBILITY.md for supported APIs and import limits.
@@ -36,6 +36,7 @@ client_scripts {
     'client/main.lua',
     'client/functions.lua',
     'client/loops.lua',
+    'client/population.lua',
     'client/events.lua',
     'client/nativenotify.js',
     'client/drawtext.lua',

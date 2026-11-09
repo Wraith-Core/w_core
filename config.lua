@@ -12,6 +12,14 @@ WConfig.Money.DontAllowMinus = { 'cash', 'bank', 'bloodmoney', 'gold' } -- Money
 WConfig.Money.PayCheckTimeOut = 15 -- The time in minutes that it will give the paycheck
 WConfig.Money.PayCheckSociety = false -- If true paycheck will come from the society account that the player is employed at, requires w_management
 
+-- 1.0.14: human population ratios, 0.0 = none and 1.0 = the engine default.
+-- Scripted shopkeepers/job actors and animal/vehicle densities are not changed.
+WConfig.Population = {
+    Enabled = true,
+    AmbientHumans = 0.65, -- Random human population, ratio per frame.
+    ScenarioHumans = 0.65, -- Human scenario population, ratio per frame.
+}
+
 WConfig.Player = {}
 WConfig.Player.RevealMap = true
 WConfig.Player.EnableEagleEye = true
