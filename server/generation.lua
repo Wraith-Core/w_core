@@ -2,7 +2,7 @@
 -- It is separate from Citizen.IsBusy: normal money APIs must remain usable inside the lease.
 local C = WCore.Citizen
 local generationLeases = {}
-local TRUSTED = {w_heists=true,w_pets=true,w_crafting=true,w_gunsmith=true,w_creators=true}
+local TRUSTED = {w_lib=true,w_heists=true,w_pets=true,w_crafting=true,w_gunsmith=true,w_creators=true,w_clothing=true,w_barber=true}
 function C.HasGenerationLease(citizenid)
     return (generationLeases[citizenid] or 0)>0
 end

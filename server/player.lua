@@ -425,7 +425,11 @@ function WCore.Player.CreatePlayer(PlayerData, Offline)
     function self.Functions.GetMoney(kind)
         if not WCore.Economy.ready() or type(kind)~='string' then return 0 end
         if kind=='bloodmoney' then kind='gold' end
-        return exports.w_centralbank:GetBalance('player:'..self.PlayerData.citizenid..':'..kind) or 0
+        if WCore.Economy.usesCentralBank() then
+            return exports.w_centralbank:GetBalance('player:'..self.PlayerData.citizenid..':'..kind) or 0
+        end
+        local money = type(self.PlayerData.money) == 'table' and self.PlayerData.money or {}
+        return tonumber(money[kind]) or 0
     end
 
 	function self.Functions.Save()
@@ -628,7 +632,7 @@ function WCore.Player.Save(source)
 		local needsRowId = PlayerData.id == nil
 		saveStarted(citizenid)
 		MySQL.insert(
-			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
+			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata" .. (WCore.Economy.usesCentralBank() and "" or ", money = :money"),
 			{
 				citizenid = PlayerData.citizenid,
 				cid = tonumber(PlayerData.cid),
@@ -672,7 +676,7 @@ function WCore.Player.SaveOffline(PlayerData)
 		if saveBlocked(PlayerData) then return end
 		saveStarted(citizenid)
 		MySQL.Async.insert(
-			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata",
+			"INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata) VALUES (:citizenid, :cid, :license, :name, :money, :charinfo, :job, :gang, :position, :metadata) ON DUPLICATE KEY UPDATE cid = :cid, name = :name, charinfo = :charinfo, job = :job, gang = :gang, position = :position, metadata = :metadata" .. (WCore.Economy.usesCentralBank() and "" or ", money = :money"),
 			{
 				citizenid = PlayerData.citizenid,
 				cid = tonumber(PlayerData.cid),
