@@ -166,7 +166,7 @@ local function masterIdentifiers()
         id = id:lower()
         if validIdentifier(id) then out[#out + 1] = id end
     end
-    return out
+    return out, raw
 end
 
 local function load()
@@ -174,9 +174,9 @@ local function load()
     --   throw, the owner still holds every permission (no staff ACE is written in permissions.cfg any more).
     Ranks[MASTER] = { name = MASTER, label = 'ماستر', color = '#c8a24a', sort = 1000, permissions = {}, protected = true }
     applyRank(MASTER)
-    local masters = masterIdentifiers()
+    local masters, rawMasters = masterIdentifiers()
     for _, id in ipairs(masters) do bindMember(id, MASTER, true) end
-    if #masters == 0 then
+    if #masters == 0 and rawMasters ~= '' then
         say('error', 'no valid master in the convar w_ranks:masters (or w_connector_owners): nobody can manage the ranks')
     end
 
