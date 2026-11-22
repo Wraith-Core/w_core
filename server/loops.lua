@@ -47,10 +47,23 @@ CreateThread(function()
                 local payment = WJobs[Player.PlayerData.job.name]['grades'][tonumber(Player.PlayerData.job.grade.level)].payment
                 if not payment then payment = Player.PlayerData.job.payment end
                 if Player.PlayerData.job and payment > 0 and (WJobs[Player.PlayerData.job.name].offDutyPay or Player.PlayerData.job.onduty) then
-                    local paid,reason=false,'economy_not_ready'
+                    local paid, reason = false, 'economy_not_ready'
                     if WCore.Economy.ready() then
-                        local from=WCore.Config.Money.PayCheckSociety and ('society:'..Player.PlayerData.job.name) or 'central:reserve'
-                        paid,reason=exports.w_centralbank:Transfer(from,'player:'..Player.PlayerData.citizenid..':bank',payment,'paycheck:'..Player.PlayerData.citizenid..':'..cycle)
+                        if WCore.Economy.usesCentralBank() then
+                            local from = WCore.Config.Money.PayCheckSociety and ('society:' .. Player.PlayerData.job.name) or 'central:reserve'
+                            paid, reason = exports.w_centralbank:Transfer(from, 'player:' .. Player.PlayerData.citizenid .. ':bank', payment, 'paycheck:' .. Player.PlayerData.citizenid .. ':' .. cycle)
+                        else
+                            if WCore.Config.Money.PayCheckSociety and GetResourceState('w_management') == 'started' then
+                                local okSoc = exports.w_management:RemoveMoney(Player.PlayerData.job.name, payment)
+                                if okSoc then
+                                    paid = Player.Functions.AddMoney('bank', payment, 'paycheck') == true
+                                else
+                                    reason = 'insufficient_funds'
+                                end
+                            else
+                                paid = Player.Functions.AddMoney('bank', payment, 'paycheck') == true
+                            end
+                        end
                     end
                     if paid then
                         TriggerClientEvent('WCore:Notify',Player.PlayerData.source,{key='info.received_paycheck',subs={value=payment}})
