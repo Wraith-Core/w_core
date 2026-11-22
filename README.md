@@ -1,49 +1,40 @@
 # w_core
 
-## الإصدار 1.0.14 — 2026-11-09
+Core framework resource for **Wraith Framework RedM** (Lua 5.4 / OneSync).
 
-- خُفّفت كثافة السكان العشوائيين البشريين إلى 65٪ من إعداد اللعبة، بما يشمل سكان الأنشطة المحيطة بأماكن العمل. النسبة قابلة للتعديل في `WConfig.Population`.
-- لا تُحذف شخصيات موجودة، ولا تتغير كثافة الحيوانات والعربات أو شخصيات المتاجر والوظائف التي تنشئها السكربتات.
-- يبدأ التخفيف بعد دخول الشخصية فقط، ويتوقف أثناء اختيارها أو عند تشغيل نظام البقاء الذي يدير كثافته بنفسه.
-- ما يحتاج تجربة داخل اللعبة: التجول في سان دوني وفالنتاين وأماكن الوظائف بعد تحميل المنطقة، والتأكد من وجود الباعة وشخصيات العمل والحيوانات. النسبة ليست عددًا ثابتًا للبوتات.
-- الحالة: نسخة محلية مرحلية، لم تُنشر. تفعيلها يحتاج إعادة تشغيل كاملة بموافقة المالك.
+Manages character persistence (`players`), money accounts, jobs, gangs, player metadata, database-backed staff ranks & ACE permissions, server bans, and core roleplay/admin commands.
 
-## الإصدار 1.0.13 — 2026-11-08
+## Key Features
 
-- ثلاث صلاحيات جديدة في صفحة الرتب: القطار (`w_train.admin`)، والأطباء (`w_medic.admin`)، والقبائل (`w_tribes.admin`). قبلها ما كان يقدر يفتح لوحاتها إلا الماستر.
+- **Player Lifecycle:** Multi-character loading, saving, citizen IDs, routing buckets, and metadata synchronization.
+- **Economy & Accounts:** Server-authoritative `cash` and `bank` balances via `player.Functions.AddMoney / RemoveMoney / SetMoney / GetMoney`.
+- **Jobs & Gangs:** Configurable jobs (including `police` and `doctor`), grades, duty status, and gang definitions with dynamic registration exports.
+- **Permissions & Bans:** Hierarchical ACE groups (`god` -> `admin` -> `mod`), database-backed staff ranks (`w_ranks`), and online/offline ban management (`BanPlayer`, `UnbanId`, `GetBans`).
+- **Built-In Commands:** `/id`, `/cid`, `/job`, `/gang`, `/me`, `/do`, `/ooc`, `/tp`, `/tpm`, `/dv`, `/dh`, `/setjob`, `/setgang`, `/givemoney`, `/setmoney`, `/closeserver`, `/openserver`.
 
-## الإصدار 1.0.12 — 2026-11-06
+## Installation
 
-- طلب المالك: رقم الشخصية الجديدة (الآيدي) صار **عشوائيًا من 4 خانات (1000-9999)**، لا بالترتيب.
-- لا يُعطى رقم مميز أبدًا، لأن الأرقام المميزة تُباع: المكرر (1111)، المتسلسل (1234، 9876)، المرآة (1221، 1001)، الأزواج (1122، 1212)، المدوّر (1000، 4500)، والرقم الذي فيه خانة واحدة ثلاث مرات (1112، 1711). القاعدة في `WCore.Citizen.IsSpecialNumber`.
-- الطاقم يستطيع إعطاء أي رقم بيده كما كان (نقل الرقم).
-- إذا امتلأت أرقام الأربع خانات تقريبًا ينتقل إلى خمس خانات وحده.
-- الاختبار: `tests/test_random_citizenid.py`.
-- طلب المالك: صلاحية جديدة في صفحة الرتب «البنك المركزي: طباعة المال والذهب» (`w_centralbank.print`). الماستر يملكها دائمًا، ولا يملكها غيره إلا إذا أعطاها لرتبة.
-- طلب المالك: الشخصية الجديدة تجد في حقيبتها **ماءين ورغيفي خبز** (`WConfig.StarterItems`، `server/starter_items.lua`). تُعطى مرة واحدة بعد أن يدفع البنك المركزي البداية (30 كاش و50 بنك، w_centralbank 2.1.3)، فينطبق عليها حد الحساب نفسه.
+1. Import `wcore.sql` into your MariaDB/MySQL database.
+2. Place `w_core` in `resources/[wraith]/w_core`.
+3. Add `ensure w_core` to `server.cfg` right after `ensure w_lib`.
 
-## الإصدار 1.0.8 — 2026-11-01
+## Quick Usage
 
-لوحة الموقع وكونسول الإدارة داخل اللعبة (w_connector) تستطيع الآن إيقاف الشخصية ورفع الإيقاف وتغيير رقمها ونقل الرقم وحذف الشخصية بنفسها، دون الحاجة إلى w_admin. الموقع يتحقق من رتبة الإداري قبل كل إجراء. يحتاج هذا التحديث إعادة تشغيل كاملة للخادم بعد موافقة المالك.
+```lua
+local WCore = exports.w_core:GetCoreObject()
 
-## الإصدار 1.0.7 — 2026-11-01
+-- Server
+local player = WCore.Functions.GetPlayer(source)
+if player then
+    player.Functions.AddMoney('cash', 50, 'reward')
+end
+```
 
-أُصلح: الشخصية الجديدة لم تكن تستطيع الدفع عند الحلاق ومتجر الملابس والجراحة، ولا التصنيع، ولا حفظ تعديل السلاح عند صانع الأسلحة، حتى يخرج اللاعب ويدخل من جديد. الآن تعمل هذه الخدمات مباشرة بعد إنشاء الشخصية.
+## Documentation & Links
 
-## الإصدار 1.0.6 — 2026-11-01
+- **Developer Docs:** https://wraith-core.github.io/docs/#/core/w_core
+- **txAdmin Recipe:** https://github.com/Wraith-Core/txAdminRecipe
 
-أوامر الانتقال المصرح بها تمنح حماية مؤقتة للحركة التي ينفذها الأمر، دون إعفاء إداري دائم من الحماية. البحث عن مكان علامة الخريطة يتوقف خلال 45 ثانية، ويعيد اللاعب إلى موضعه السابق عند الفشل، مع إعادة الشاشة وحالة التجميد. لا تظهر رسالة نجاح إذا تعذر العثور على الأرض.
+## License
 
-الحماية المؤقتة للانتقال المباشر مدتها 10 ثوانٍ، وللبحث عن العلامة 50 ثانية. مهلة العلامة تضيف هامشًا محدودًا لوصول الطلب والتنظيف؛ تأخر الشبكة الطويل يحتاج إعادة المحاولة. تفعيل هذا التحديث يتطلب إعادة تشغيل الخادم بعد موافقة المالك. يلزم التحقق داخل اللعبة من الانتقال للإحداثيات واللاعب والعلامة، ورفض الأوامر لمن لا يملك صلاحيتها.
-
-## الإصدار 1.0.5 — 2026-10-30
-
-طلبات تحديث بيانات اللاعب لا تحفظ الحقيبة في قاعدة البيانات. أُعيد تطبيق منع تكرار الترخيص بحسب الإعداد، مع منع تشغيل الشخصية نفسها مرتين. رسائل تعذر الراتب تميّز نقص رصيد الجهة عن تعطل النظام المالي.
-
-أُضيف حجز جيل الشخصية لمسارات التسوية المالية الموثوقة، ليمنع حذف الشخصية أو نقل رقمها بينما تكتمل العملية. حجز الجيل لا يغيّر IsBusy ولا يعطل المال الطبيعي داخل العملية.
-
-واجهة الخادم: `exports.w_core:WithCitizenGeneration(citizenid, expectedPlayersRowId, fn)`. تحفظ الموارد رقم `players.id` الأصلي في الإيصال، ثم تستدعي الواجهة عند التنفيذ أو إعادة المحاولة. يُحجز الجيل قبل قراءة القاعدة ويظل محجوزًا خلال كل انتظار داخل `fn`؛ تعاد قيمها كما هي، ويحرر الحجز عند العودة أو الخطأ. الرفض يعيد `false` ورمزًا: `generation_busy` أو `generation_changed` أو `generation_unavailable` أو `invalid_generation` أو `forbidden`. خطأ `fn` يعيد `generation_callback_failed`. المسموح: w_heists وw_pets وw_crafting وw_gunsmith وw_creators فقط. لا توجد مهلة تفك الحجز أثناء استمرار العملية، ولا تغيير في مخطط القاعدة. يجب ألا تطلب `fn` حذف الشخصية أو نقلها؛ يرفض ذلك بحالة busy حتى تنتهي التسوية.
-
-ما يحتاج تجربة داخل اللعبة: الدخول العادي، رفض الجلسة المكررة، واستلام الراتب بعد دورة الدفع.
-
-مفتاح البديل لتلميحات السكربتات الخارجية (client/prompts.lua) صار J بدل E (لأن E يمسك اللاعب القريب).
+GPL-3.0 — see [LICENSE](LICENSE).
